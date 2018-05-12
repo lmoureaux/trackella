@@ -35,7 +35,7 @@ int main(int, char **)
     TH2D seed_phi2_phi4("seed_phi2_phi4", ";phi2;phi4", 50, -0.5, 0.5, 50, -0.5, 0.5);
     TH2D seed_phi3_phi4("seed_phi3_phi4", ";phi3;phi4", 50, -0.5, 0.5, 50, -0.5, 0.5);
 
-    event_reader in("~lmoureau/data/v2.root");
+    event_reader in("~lmoureau/data/v3.root");
     long long i = 0;
     while (in.next()) {
         std::cout << "===== Event " << i++ << " =====" << std::endl;
@@ -113,6 +113,8 @@ int main(int, char **)
         for (unsigned layer = 0; layer < pb_hits_per_layer.size(); ++layer) {
             std::cout << "  layer " << layer << ":   " << pb_hits_per_layer[layer].size() << std::endl;
         }
+
+        continue; // Don't run seed finding
 
         std::cout << "Searching for hit pairs in layers 3 and 4..." << std::flush;
         std::vector<std::vector<hit>> candidates;

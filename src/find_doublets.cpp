@@ -11,7 +11,7 @@
 
 int main(int, char **)
 {
-    event_reader in("~lmoureau/data/v2.root");
+    event_reader in("~lmoureau/data/v3.root");
     long long i = 0;
     while (in.next()) {
         std::cout << "==== Next event ====" << std::endl;
