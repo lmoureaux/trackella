@@ -18,6 +18,8 @@ struct event_reader::data
     TTreeReaderArray<float> trk_pt;
     TTreeReaderArray<float> trk_eta;
     TTreeReaderArray<float> trk_phi;
+    TTreeReaderArray<float> trk_dxy_bs;
+    TTreeReaderArray<float> trk_dz_bs;
     TTreeReaderArray<int>   trk_hit_n;
     TTreeReaderArray<float> trk_hit_globalPos_x;
     TTreeReaderArray<float> trk_hit_globalPos_y;
@@ -39,6 +41,8 @@ event_reader::data::data(const std::string &filename) :
     trk_pt(reader, "trk_pt"),
     trk_eta(reader, "trk_eta"),
     trk_phi(reader, "trk_phi"),
+    trk_dxy_bs(reader, "trk_dxy_bs"),
+    trk_dz_bs(reader, "trk_dz_bs"),
     trk_hit_n(reader, "trk_hit_n"),
     trk_hit_globalPos_x(reader, "trk_hit_globalPos_x"),
     trk_hit_globalPos_y(reader, "trk_hit_globalPos_y"),
@@ -128,8 +132,10 @@ std::unique_ptr<event> event_reader::get()
         float pt = _d->trk_pt[itrk];
         float eta = _d->trk_eta[itrk];
         float phi = _d->trk_phi[itrk];
+        float b0 = _d->trk_dxy_bs[itrk];
+        float z0 = _d->trk_dz_bs[itrk];
 
-        tracks.push_back({ pt, eta, phi, track_hits, track_seed });
+        tracks.push_back({ pt, eta, phi, b0, z0, track_hits, track_seed });
     }
 
 

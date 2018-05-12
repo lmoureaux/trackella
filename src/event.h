@@ -18,7 +18,7 @@ struct beam_spot
 
 struct track
 {
-    float pt, eta, phi;
+    float pt, eta, phi, b0, z0;
     std::vector<hit> hits, seed;
 };
 
