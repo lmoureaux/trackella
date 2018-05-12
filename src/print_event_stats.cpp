@@ -17,6 +17,15 @@ float dphi3(float phi1, float phi2, float phi3)
     return dphi3;
 }
 
+float deltaphi(float phi1, float phi2)
+{
+    float delta = phi1 - phi2;
+    if (delta > pi) {
+        delta -= 2 * pi;
+    }
+    return delta;
+}
+
 int main(int, char **)
 {
     TFile out("output.root", "RECREATE");
@@ -26,6 +35,12 @@ int main(int, char **)
     TH1D dz4("dz4", "dz4", 100, -10, 10);
     TH2D dphi_dphi3("dphi_dphi3", "dphi vs dphi3", 50, 0, 0.5, 60, -0.1, 0.5);
     TH2D dphi3_dz3("dphi3_dz3", "dphi3 vs dz3", 50, -0.1, 0.4, 60, 0, 30);
+
+    TH2D track_phi1_phi2("track_phi1_phi2", ";phi1 - bs phi;phi2 - phi1", 50, -pi, pi, 50, -0.5, 0.5);
+    TH2D track_proj_z_dphi("track_proj_z_diphi", ";Projected z;phi2 - phi1", 50, -20, 20, 50, -0.05, 0.05);
+    TH2D track_z0_2hits("track_z0_2hits", ";z0;z0(2hits)", 50, -20, 20, 50, -20, 20);
+    TH1D track_z0_resolution("track_z0_resolution", ";#Delta z_{0} (2 hits)", 50, -0.2, -0.1);
+    TH1D track_z0_resolution_int("track_z0_resolution_int", ";#Delta z_{0} (2 hits)", 50, -0.2, -0.1);
 
     TH2D track_phi2_phi3("track_phi2_phi3", ";phi2;phi3", 50, -0.5, 0.5, 50, -0.5, 0.5);
     TH2D track_phi2_phi4("track_phi2_phi4", ";phi2;phi4", 50, -0.5, 0.5, 50, -0.5, 0.5);
@@ -40,6 +55,10 @@ int main(int, char **)
     while (in.next()) {
         std::cout << "===== Event " << i++ << " =====" << std::endl;
         std::unique_ptr<event> e = in.get();
+        std::cout << "Beam spot r phi z: "
+                  << e->bs.r << " "
+                  << e->bs.phi << " "
+                  << e->bs.z << std::endl;
         std::cout << "#hits:       " << e->hits.size() << std::endl;
         std::sort(e->hits.begin(), e->hits.end(), hit_less_than);
         e->hits.erase(std::unique(e->hits.begin(), e->hits.end(), hit_equal),
@@ -56,24 +75,29 @@ int main(int, char **)
             }
             float phi0 = 0, phi1 = 0, phi2 = 0, phi3 = 0;
             float z0 = 0, z1 = 0, z2 = 0, z3 = 0;
+            float r0 = 0, r1 = 0, r2 = 0, r3 = 0;
             for (const hit &h : trk.hits) {
                 if (hit_is_pixel_barrel(h)) {
                     switch (hit_pixel_barrel_layer(h)) {
                     case 0:
                         phi0 = h.phi;
                         z0 = h.z;
+                        r0 = h.r;
                         break;
                     case 1:
                         phi1 = h.phi;
                         z1 = h.z;
+                        r1 = h.r;
                         break;
                     case 2:
                         phi2 = h.phi;
                         z2 = h.z;
+                        r2 = h.r;
                         break;
                     case 3:
                         phi3 = h.phi;
                         z3 = h.z;
+                        r3 = h.r;
                         break;
                     }
                 }
@@ -88,6 +112,55 @@ int main(int, char **)
                 }
                 if (z0 != 0 && z1 != 0 && z2 != 0) {
                     dphi3_dz3.Fill(dphi3(phi0, phi1, phi2), std::abs(z2 + z0 - 2 * z1));
+                }
+                if (trk.pt > 0.8) {
+                    track_phi1_phi2.Fill(deltaphi(phi1, e->bs.phi), deltaphi(phi2, phi1));
+                    track_proj_z_dphi.Fill(r2 - (r2 - r1) / (z2 - z1) * z2, deltaphi(phi2, phi1));
+
+                    {
+                        // This calculation is EXACT (for pt -> inf)
+                        float x1 = r0;
+                        float x2 = r1 * std::cos(phi1 - phi0);
+                        float y1 = 0;
+                        float y2 = r1 * std::sin(phi1 - phi0);
+
+                        float xb = e->bs.r * std::cos(e->bs.phi - phi0);
+                        float yb = e->bs.r * std::sin(e->bs.phi - phi0);
+
+                        float num = (x2 - x1) * (x1 - xb) + (y2 - y1) * (y1 - yb);
+                        float den = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+                        float xi = -num / den;
+
+                        track_z0_2hits.Fill(trk.z0, z0 + (z1 - z0) * xi);
+                    }
+                    {
+                        // This calculation is APPROXIMATE but very precise too (and much simpler)
+                        float rb_proj = e->bs.r * std::cos(e->bs.phi - phi0);
+
+                        float num = (rb_proj - r0);
+                        float den = (r1 - r0);
+                        float xi = num / den;
+
+                        track_z0_resolution.Fill(trk.z0 - (z0 + (z1 - z0) * xi));
+                    }
+                    {
+                        // This calculation is the approx one but without floats (except for the cos)
+                        int ir0 = length_to_compact<int>(r0);
+                        int ir1 = length_to_compact<int>(r1);
+                        int dr = ir1 - ir0;
+
+                        int rb_proj = length_to_compact<int>(e->bs.r * std::cos(e->bs.phi - phi0));
+                        int num = ir0 - rb_proj;
+
+                        int xi = -(num << 12) / dr;
+
+                        int iz0 = length_to_compact<int>(z0);
+                        int iz1 = length_to_compact<int>(z1);
+
+                        int z0_est = iz0 + (((iz1 - iz0) * xi) >> 12);
+
+                        track_z0_resolution_int.Fill(trk.z0 - compact_to_length(z0_est));
+                    }
                 }
                 track_phi2_phi3.Fill(phi2 - phi3, phi1 - phi3);
                 track_phi2_phi4.Fill(phi2 - phi3, phi0 - phi3);
