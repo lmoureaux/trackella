@@ -1,4 +1,5 @@
 #include <array>
+#include <chrono>
 #include <iostream>
 
 #include <TFile.h>
@@ -11,6 +12,12 @@
 
 int main(int, char **)
 {
+    std::chrono::duration<double> formatting;
+    long long formatted_hits = 0;
+
+    std::chrono::duration<double> finding;
+    long long doublets_found = 0;
+
     event_reader in("~lmoureau/data/v3.root");
     long long i = 0;
     while (in.next()) {
@@ -32,6 +39,8 @@ int main(int, char **)
         std::cout << "Hits in 2nd layer: " << pb_hits_per_layer[1].size() << std::endl;
 
         std::cout << "Making doublets..." << std::endl;
+
+        auto start = std::chrono::high_resolution_clock::now();
 
         std::vector<compact_pb_hit> layer1;
         layer1.reserve(pb_hits_per_layer[0].size());
@@ -63,13 +72,32 @@ int main(int, char **)
         });
         finder.set_hits(layer1, layer2);
 
+        formatting += std::chrono::high_resolution_clock::now() - start;
+        formatted_hits += layer1.size();
+        formatted_hits += layer1.size();
+        start = std::chrono::high_resolution_clock::now();
+
         finder.start();
 
         std::vector<pb_doublet_finder::doublet> doublets;
         finder.get_doublets(doublets);
+
+        finding += std::chrono::high_resolution_clock::now() - start;
+        doublets_found += doublets.size();
+
         std::cout << "Doublets: "
                   << doublets.size()
                   << "; factor: "
                   << layer1.size() * layer2.size() / doublets.size() << std::endl;
     }
+
+    std::cout << "==== Performance info ====" << std::endl;
+    std::cout << "Formatted " << formatted_hits
+              << " hits in " << formatting.count()
+              << " s (" << (formatting.count() / formatted_hits * 1e6)
+              << " us)" << std::endl;
+    std::cout << "Found " << doublets_found
+              << " doublets in " << finding.count()
+              << " s (" << (finding.count() / formatted_hits * 1e6)
+              << " us)" << std::endl;
 }
