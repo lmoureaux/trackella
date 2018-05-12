@@ -73,6 +73,11 @@ public:
     state get_state() const;
 
     /**
+     * \brief Sets the beam spot properties.
+     */
+    void set_beam_spot(const compact_beam_spot &bs);
+
+    /**
      * \brief Pushes hits to the machine.
      *
      * The vectors have to remain valid until all results have been read.
@@ -114,6 +119,7 @@ protected:
 private:
 #ifdef HARDWARE_ACCELERATOR
 #else // HARDWARE_ACCELERATOR
+    compact_beam_spot _bs;
     const std::vector<compact_pb_hit> *_layer1 = nullptr;
     const std::vector<compact_pb_hit> *_layer2 = nullptr;
     std::vector<doublet> _doublets;

@@ -39,6 +39,16 @@ template<class T> constexpr T length_to_compact(float length)
 }
 
 /**
+ * \brief Holds compact information about the beam spot.
+ */
+struct compact_beam_spot
+{
+    float r;        ///< \brief Radius (cm)
+    float phi;      ///< \brief Azimutal angle (rad)
+    std::int32_t z; ///< \brief Position along the \c z axis
+};
+
+/**
  * \brief Holds compact information about a pixel hit in the barrel.
  *
  * It is assumed that the pixel layer is known from elsewhere.

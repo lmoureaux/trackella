@@ -56,6 +56,11 @@ int main(int, char **)
         }
 
         pb_doublet_finder finder;
+        finder.set_beam_spot({
+            e->bs.r,
+            e->bs.phi,
+            length_to_compact<std::int32_t>(e->bs.z)
+        });
         finder.set_hits(layer1, layer2);
 
         finder.start();

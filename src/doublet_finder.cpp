@@ -54,10 +54,55 @@ void pb_doublet_finder::set_hits(const std::vector<compact_pb_hit> &layer1,
 #endif // HARDWARE_ACCELERATOR
 }
 
+void pb_doublet_finder::set_beam_spot(const compact_beam_spot &bs)
+{
+    assert(get_state() == state_ready);
+
+#ifdef HARDWARE_ACCELERATOR
+    // TODO
+#else // HARDWARE_ACCELERATOR
+    _bs = bs;
+#endif // HARDWARE_ACCELERATOR
+}
+
 void pb_doublet_finder::start()
 {
     send_command(command::start);
 }
+
+#ifndef HARDWARE_ACCELERATOR
+namespace /* anonymous */
+{
+    /**
+     * \brief Finds z component of the impact parameter (wrt the beam spot)
+     *
+     * The error on the computed value is about 1.4mm.
+     */
+    int extrapolated_dz(const compact_beam_spot &bs,
+                        const compact_pb_hit &inner,
+                        const compact_pb_hit &outer)
+    {
+
+        const constexpr int layer_1_r = length_to_compact<int>(3);
+        const constexpr int layer_2_r = length_to_compact<int>(6.8);
+
+        int inner_r = layer_1_r + inner.dr;
+        int outer_r = layer_2_r + outer.dr;
+
+        int dr = outer_r - inner_r;
+
+        // Need a float to compute the cos
+        float inner_phi = compact_to_radians(inner.phi);
+
+        int rb_proj = length_to_compact<int>(bs.r * std::cos(bs.phi - inner_phi));
+
+        int num = inner_r - rb_proj;
+        int xi = -(num << 12) / dr;
+
+        return inner.z + (((outer.z - inner.z) * xi) >> 12) - bs.z;
+    }
+} // namespace anonymous
+#endif // HARDWARE_ACCELERATOR
 
 void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
 {
@@ -78,9 +123,10 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
         _doublets.reserve(_layer1->size() * _layer2->size());
         for (std::uint16_t i1 = 0; i1 < _layer1->size(); ++i1) {
             for (std::uint16_t i2 = 0; i2 < _layer2->size(); ++i2) {
-                auto phi1 = (*_layer1)[i1].phi;
-                auto phi2 = (*_layer2)[i2].phi;
-                if (std::abs(phi1 - phi2) < radians_to_compact(0.04)) {
+                const auto &inner = (*_layer1)[i1];
+                const auto &outer = (*_layer2)[i2];
+                if (std::abs(inner.phi - outer.phi) < radians_to_compact(0.04)
+                    && std::abs(extrapolated_dz(_bs, inner, outer)) < length_to_compact<int>(11)) {
                     _doublets.push_back({ i1, i2 });
                 }
             }
