@@ -11,6 +11,11 @@ struct hit
     float r, phi, z;
 };
 
+struct beam_spot
+{
+    float r, phi, z;
+};
+
 struct track
 {
     float pt, eta, phi;
@@ -19,6 +24,7 @@ struct track
 
 struct event
 {
+    beam_spot bs;
     std::vector<hit> hits;
     std::vector<track> tracks;
 };

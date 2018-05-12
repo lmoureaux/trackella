@@ -12,6 +12,9 @@ struct event_reader::data
     TFile input;
     TTreeReader reader;
 
+    TTreeReaderValue<float> bs_x0;
+    TTreeReaderValue<float> bs_y0;
+    TTreeReaderValue<float> bs_z0;
     TTreeReaderArray<float> trk_pt;
     TTreeReaderArray<float> trk_eta;
     TTreeReaderArray<float> trk_phi;
@@ -30,6 +33,9 @@ struct event_reader::data
 event_reader::data::data(const std::string &filename) :
     input(filename.c_str(), "OPEN"),
     reader("TrackTree/tree", &input),
+    bs_x0(reader, "bs_x0"),
+    bs_y0(reader, "bs_y0"),
+    bs_z0(reader, "bs_z0"),
     trk_pt(reader, "trk_pt"),
     trk_eta(reader, "trk_eta"),
     trk_phi(reader, "trk_phi"),
@@ -68,6 +74,16 @@ bool hit_compare(const hit &lhs, const hit &rhs)
 
 std::unique_ptr<event> event_reader::get()
 {
+    // Beam spot
+    beam_spot bs;
+    {
+        float x = *_d->bs_x0;
+        float y = *_d->bs_y0;
+        bs.r = std::sqrt(x * x + y * y);
+        bs.phi = std::atan2(y, x);
+    }
+    bs.z = *_d->bs_z0;
+
     std::vector<hit> hits;
     hits.reserve(10 * _d->trk_pt.GetSize());
 
@@ -116,7 +132,9 @@ std::unique_ptr<event> event_reader::get()
         tracks.push_back({ pt, eta, phi, track_hits, track_seed });
     }
 
+
     std::unique_ptr<event> e = std::make_unique<event>();
+    e->bs = std::move(bs);
     e->hits = std::move(hits);
     e->tracks = std::move(tracks);
     return e;
