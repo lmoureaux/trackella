@@ -85,6 +85,10 @@ int main(int, char **)
         finding += std::chrono::high_resolution_clock::now() - start;
         doublets_found += doublets.size();
 
+        if (doublets.empty()) {
+            std::cout << "No doublets found!" << std::endl;
+            continue;
+        }
         std::cout << "Doublets: "
                   << doublets.size()
                   << "; factor: "
