@@ -61,6 +61,10 @@ int main(int, char **)
         finder.start();
 
         std::vector<pb_doublet_finder::doublet> doublets;
-        std::cout << finder.get_doublets(doublets) << std::endl;
+        finder.get_doublets(doublets);
+        std::cout << "Doublets: "
+                  << doublets.size()
+                  << "; factor: "
+                  << layer1.size() * layer2.size() / doublets.size() << std::endl;
     }
 }

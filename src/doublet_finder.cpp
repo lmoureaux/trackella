@@ -1,6 +1,7 @@
 #include "doublet_finder.h"
 
 #include <cassert>
+#include <cmath>
 
 std::size_t pb_doublet_finder::get_doublets(
     std::vector<pb_doublet_finder::doublet> &output)
@@ -77,7 +78,11 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
         _doublets.reserve(_layer1->size() * _layer2->size());
         for (std::uint16_t i1 = 0; i1 < _layer1->size(); ++i1) {
             for (std::uint16_t i2 = 0; i2 < _layer2->size(); ++i2) {
-                _doublets.push_back({ i1, i2 });
+                auto phi1 = (*_layer1)[i1].phi;
+                auto phi2 = (*_layer2)[i2].phi;
+                if (std::abs(phi1 - phi2) < radians_to_compact(0.04)) {
+                    _doublets.push_back({ i1, i2 });
+                }
             }
         }
 
