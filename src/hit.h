@@ -1,0 +1,77 @@
+#ifndef HIT_H
+#define HIT_H
+
+#include <cstdint>
+
+const constexpr float pi = 3.141592653589793f;
+
+/**
+ * \brief Converts the compact representation to radians.
+ */
+constexpr float compact_to_radians(std::int16_t compact)
+{
+    return compact / float(1 << 15) * pi;
+}
+
+/**
+ * \brief Converts radians to the compact representation.
+ */
+constexpr std::int16_t radians_to_compact(float radians)
+{
+    return radians * float(1 << 15) / pi;
+}
+
+
+/**
+ * \brief Converts the compact representation to a length (in cm).
+ */
+template<class T> constexpr float compact_to_length(T compact)
+{
+    return compact / float(1 << 14);
+}
+
+/**
+ * \brief Converts a length (in cm) to the compact representation.
+ */
+template<class T> constexpr T length_to_compact(float length)
+{
+    return length * float(1 << 14);
+}
+
+/**
+ * \brief Holds compact information about a pixel hit in the barrel.
+ *
+ * It is assumed that the pixel layer is known from elsewhere.
+ */
+struct compact_pb_hit
+{
+    /**
+     * \brief Difference in \c r with respect to the layer's average.
+     *
+     * Encoding: 1 unit = 2cm / 2^15 = 6.1um.
+     *
+     * Range: -2cm to 2cm.
+     */
+    std::int16_t dr;
+
+    /**
+     * \brief Azimutal angle \c phi.
+     *
+     * Encoding: 1 unit = pi / 2^15 rad.
+     *
+     * Range: -pi to pi.
+     */
+    std::int16_t phi;
+
+    /**
+     * \brief Longitudinal component.
+     *
+     * Encoding: 1 unit = 2cm / 2^15 = 6.1um.
+     *
+     * Range: -1.3km to 1.3km.
+     */
+    std::int32_t z;
+};
+static_assert(sizeof(compact_pb_hit) == 8);
+
+#endif // HIT_H
