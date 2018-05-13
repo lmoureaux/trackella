@@ -10,6 +10,17 @@
 #include "eventreader.h"
 #include "hitutils.h"
 
+float deltaphi(float phi1, float phi2)
+{
+    float delta = phi1 - phi2;
+    if (delta > pi) {
+        delta -= 2 * pi;
+    } else if (delta <= -pi) {
+        delta += 2 * pi;
+    }
+    return delta;
+}
+
 int main(int, char **)
 {
     std::chrono::duration<double> formatting;
@@ -17,6 +28,16 @@ int main(int, char **)
 
     std::chrono::duration<double> finding;
     long long doublets_found = 0;
+
+    TFile out("doublets.root", "RECREATE");
+
+    TH1D doublet_phi1("doublet_phi1", ";phi1;count", 50, -pi, pi);
+    TH1D doublet_phi2("doublet_phi2", ";phi2;count", 50, -pi, pi);
+    TH1D doublet_phi2_phi1("doublet_phi2_phi1", ";phi2 - phi1;count", 50, -0.05, 0.05);
+    TH1D doublet_z1("doublet_z1", ";z1;count", 50, -30, 30);
+    TH1D doublet_z2("doublet_z2", ";z2;count", 50, -30, 30);
+    TH1D doublet_z0("doublet_z0", ";z0;count", 50, -15, 15);
+    TH1D doublet_b0("doublet_b0", ";b0;count", 50, -0.05, 0.05);
 
     event_reader in("~lmoureau/data/v3.root");
     long long i = 0;
@@ -111,6 +132,17 @@ int main(int, char **)
             std::cout << "Erased " << (previous_size - doublets.size())
                       << " duplicates!" << std::endl;
         }
+
+        for (const auto &doublet : doublets) {
+            const auto &h1 = layer1.at(doublet.first);
+            const auto &h2 = layer2.at(doublet.second);
+
+            doublet_phi1.Fill(compact_to_radians(h1.phi));
+            doublet_phi2.Fill(compact_to_radians(h2.phi));
+            doublet_phi2_phi1.Fill(compact_to_radians(h2.phi - h1.phi));
+            doublet_z1.Fill(compact_to_length(h1.z));
+            doublet_z2.Fill(compact_to_length(h2.z));
+        }
     }
 
     std::cout << "==== Performance info ====" << std::endl;
@@ -122,4 +154,7 @@ int main(int, char **)
               << " doublets in " << finding.count()
               << " s (" << (finding.count() / formatted_hits * 1e6)
               << " us)" << std::endl;
+
+    out.cd();
+    out.Write();
 }
