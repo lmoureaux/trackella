@@ -199,7 +199,7 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
         }
 
         // Recover efficiency near +pi
-        for (auto it1 = _layer1.rbegin(); it1 != _layer1.rend(); --it1) {
+        for (auto it1 = _layer1.rbegin(); it1 != _layer1.rend(); ++it1) {
             const auto &inner = *it1;
 
             // Here we want to check for the wraparound, so we need int16
