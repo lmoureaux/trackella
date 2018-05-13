@@ -21,6 +21,63 @@ float deltaphi(float phi1, float phi2)
     return delta;
 }
 
+int extrapolated_xi(const compact_beam_spot &bs,
+                    const compact_pb_hit &inner,
+                    const compact_pb_hit &outer)
+{
+    const constexpr int layer_1_r = length_to_compact<int>(3);
+    const constexpr int layer_2_r = length_to_compact<int>(6.8);
+
+    int inner_r = layer_1_r + inner.dr;
+    int outer_r = layer_2_r + outer.dr;
+
+    int dr = outer_r - inner_r;
+
+    // Need a float to compute the cos
+    float inner_phi = compact_to_radians(inner.phi);
+
+    int rb_proj = length_to_compact<int>(bs.r * std::cos(bs.phi - inner_phi));
+
+    int num = inner_r - rb_proj;
+    return -(num << 12) / dr;
+}
+
+/**
+ * \brief Finds transverse component of the impact parameter (wrt the beam spot)
+ */
+int extrapolated_dr(const compact_beam_spot &bs,
+                    const compact_pb_hit &inner,
+                    const compact_pb_hit &outer)
+{
+    const constexpr int layer_1_r = length_to_compact<int>(3);
+    const constexpr int layer_2_r = length_to_compact<int>(6.8);
+
+    int inner_r = layer_1_r + inner.dr;
+
+    // Need a float to compute the cos and sin
+    float inner_phi = compact_to_radians(inner.phi);
+
+    int rb_proj_x = length_to_compact<int>(bs.r * std::cos(bs.phi - inner_phi));
+    int rb_proj_y = length_to_compact<int>(bs.r * std::sin(bs.phi - inner_phi));
+
+    std::int16_t dphi = outer.phi - inner.phi;
+
+    return std::abs(((inner_r - rb_proj_x) * dphi) / radians_to_compact(1) + rb_proj_y);
+}
+
+/**
+ * \brief Finds z component of the impact parameter (wrt the beam spot)
+ *
+ * The error on the computed value is about 1.4mm.
+ */
+int extrapolated_dz(const compact_beam_spot &bs,
+                    const compact_pb_hit &inner,
+                    const compact_pb_hit &outer)
+{
+    int xi = extrapolated_xi(bs, inner, outer);
+    return inner.z + (((outer.z - inner.z) * xi) >> 12) - bs.z;
+}
+
 int main(int, char **)
 {
     std::chrono::duration<double> formatting;
@@ -37,7 +94,7 @@ int main(int, char **)
     TH1D doublet_z1("doublet_z1", ";z1;count", 50, -30, 30);
     TH1D doublet_z2("doublet_z2", ";z2;count", 50, -30, 30);
     TH1D doublet_z0("doublet_z0", ";z0;count", 50, -15, 15);
-    TH1D doublet_b0("doublet_b0", ";b0;count", 50, -0.05, 0.05);
+    TH1D doublet_b0("doublet_b0", ";b0;count", 50, 0, 0.25);
 
     event_reader in("~lmoureau/data/v3.root");
     long long i = 0;
@@ -94,12 +151,14 @@ int main(int, char **)
                       return a.phi < b.phi;
                   });
 
-        pb_doublet_finder finder;
-        finder.set_beam_spot({
+        compact_beam_spot bs{
             e->bs.r,
             e->bs.phi,
             length_to_compact<std::int32_t>(e->bs.z)
-        });
+        };
+
+        pb_doublet_finder finder;
+        finder.set_beam_spot(bs);
         finder.set_hits(layer1, layer2);
 
         formatting += std::chrono::high_resolution_clock::now() - start;
@@ -142,6 +201,9 @@ int main(int, char **)
             doublet_phi2_phi1.Fill(compact_to_radians(h2.phi - h1.phi));
             doublet_z1.Fill(compact_to_length(h1.z));
             doublet_z2.Fill(compact_to_length(h2.z));
+
+            doublet_z0.Fill(compact_to_length(extrapolated_dz(bs, h1, h2)));
+            doublet_b0.Fill(compact_to_length(extrapolated_dr(bs, h1, h2)));
         }
     }
 
