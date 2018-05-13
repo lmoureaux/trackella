@@ -93,6 +93,15 @@ int main(int, char **)
                   << doublets.size()
                   << "; factor: "
                   << layer1.size() * layer2.size() / doublets.size() << std::endl;
+
+        auto previous_size = doublets.size();
+        std::sort(doublets.begin(), doublets.end());
+        doublets.erase(std::unique(doublets.begin(), doublets.end()), doublets.end());
+
+        if (doublets.size() != previous_size) {
+            std::cout << "Erased " << (previous_size - doublets.size())
+                      << " duplicates!" << std::endl;
+        }
     }
 
     std::cout << "==== Performance info ====" << std::endl;
