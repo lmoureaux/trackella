@@ -15,6 +15,8 @@ std::size_t pb_doublet_finder::get_doublets(
     return 0;
 #else // HARDWARE_ACCELERATOR
     _state |= state_ready;
+    _layer1 = nullptr;
+    _layer2 = nullptr;
 
     if (output.size() == 0) {
         std::swap(_doublets, output);
@@ -48,21 +50,8 @@ void pb_doublet_finder::set_hits(const std::vector<compact_pb_hit> &layer1,
 #ifdef HARDWARE_ACCELERATOR
     // TODO
 #else // HARDWARE_ACCELERATOR
-    _layer1.clear();
-    std::copy(layer1.begin(), layer1.end(), std::back_inserter(_layer1));
-    std::sort(_layer1.begin(),
-              _layer1.end(),
-              [](const compact_pb_hit &a, const compact_pb_hit &b) {
-                  return a.phi < b.phi;
-              });
-
-    _layer2.clear();
-    std::copy(layer2.begin(), layer2.end(), std::back_inserter(_layer2));
-    std::sort(_layer2.begin(),
-              _layer2.end(),
-              [](const compact_pb_hit &a, const compact_pb_hit &b) {
-                  return a.phi < b.phi;
-              });
+    _layer1 = &layer1;
+    _layer2 = &layer2;
 #endif // HARDWARE_ACCELERATOR
 }
 
@@ -132,34 +121,34 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
         _state ^= state_out_of_memory;
         _state |= state_processing;
 
-        _doublets.reserve(_layer1.size() * _layer2.size() / 128);
+        _doublets.reserve(_layer1->size() * _layer2->size() / 128);
 
         const std::int16_t window_width = radians_to_compact(0.04);
 
-        auto range_begin = _layer2.begin();
+        auto range_begin = _layer2->begin();
 
-        for (auto it1 = _layer1.begin(); it1 != _layer1.end(); ++it1) {
+        for (auto it1 = _layer1->begin(); it1 != _layer1->end(); ++it1) {
             const auto &inner = *it1;
 
             // We can't use an int16 here, else it wraps around in the first
             // iteration, gets negative and the condition in the while loop is
             // always false
             const int phi_low = inner.phi - window_width;
-            while (range_begin != _layer2.end() && range_begin->phi < phi_low) {
+            while (range_begin != _layer2->end() && range_begin->phi < phi_low) {
                 ++range_begin;
             }
 
             // We can't use an int16 here, else it wraps around and the break
             // below happens too early.
             const int phi_high = inner.phi + window_width;
-            for (auto it2 = range_begin; it2 != _layer2.end(); ++it2) {
+            for (auto it2 = range_begin; it2 != _layer2->end(); ++it2) {
                 if (it2->phi > phi_high) {
                     break;
                 }
                 if (std::abs(extrapolated_dz(_bs, inner, *it2)) < length_to_compact<int>(11)) {
                     _doublets.push_back({
-                        std::distance(_layer1.begin(), it1),
-                        std::distance(_layer2.begin(), it2)
+                        std::distance(_layer1->begin(), it1),
+                        std::distance(_layer2->begin(), it2)
                     });
                 }
             }
@@ -175,7 +164,7 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
          */
 
         // Recover efficiency near -pi
-        for (auto it1 = _layer1.begin(); it1 != _layer1.end(); ++it1) {
+        for (auto it1 = _layer1->begin(); it1 != _layer1->end(); ++it1) {
             const auto &inner = *it1;
 
             // Here we want to check for the wraparound, so we need int16
@@ -185,21 +174,21 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
                 break;
             }
 
-            for (auto it2 = _layer2.rbegin(); it2 != _layer2.rend(); ++it2) {
+            for (auto it2 = _layer2->rbegin(); it2 != _layer2->rend(); ++it2) {
                 if (it2->phi < phi_low) {
                     break;
                 }
                 if (std::abs(extrapolated_dz(_bs, inner, *it2)) < length_to_compact<int>(11)) {
                     _doublets.push_back({
-                        std::distance(_layer1.begin(), it1),
-                        std::distance(it2, _layer2.rend()) - 1
+                        std::distance(_layer1->begin(), it1),
+                        std::distance(it2, _layer2->rend()) - 1
                     });
                 }
             }
         }
 
         // Recover efficiency near +pi
-        for (auto it1 = _layer1.rbegin(); it1 != _layer1.rend(); ++it1) {
+        for (auto it1 = _layer1->rbegin(); it1 != _layer1->rend(); ++it1) {
             const auto &inner = *it1;
 
             // Here we want to check for the wraparound, so we need int16
@@ -209,14 +198,14 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
                 break;
             }
 
-            for (auto it2 = _layer2.begin(); it2 != _layer2.end(); ++it2) {
+            for (auto it2 = _layer2->begin(); it2 != _layer2->end(); ++it2) {
                 if (it2->phi > phi_high) {
                     break;
                 }
                 if (std::abs(extrapolated_dz(_bs, inner, *it2)) < length_to_compact<int>(11)) {
                     _doublets.push_back({
-                        std::distance(it1, _layer1.rend()) - 1,
-                        std::distance(_layer2.begin(), it2)
+                        std::distance(it1, _layer1->rend()) - 1,
+                        std::distance(_layer2->begin(), it2)
                     });
                 }
             }

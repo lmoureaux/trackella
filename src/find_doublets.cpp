@@ -28,12 +28,11 @@ int main(int, char **)
         e->hits.erase(std::unique(e->hits.begin(), e->hits.end(), hit_equal),
                       e->hits.end());
 
-        std::vector<hit> pb_hits;
-        std::copy_if(e->hits.begin(), e->hits.end(), std::back_inserter(pb_hits), hit_is_pixel_barrel);
-
         std::array<std::vector<hit>, 4> pb_hits_per_layer;
-        for (const hit &h : pb_hits) {
-            pb_hits_per_layer[hit_pixel_barrel_layer(h)].push_back(h);
+        for (const hit &h : e->hits) {
+            if (hit_is_pixel_barrel(h)) {
+                pb_hits_per_layer[hit_pixel_barrel_layer(h)].push_back(h);
+            }
         }
         std::cout << "Hits in 1st layer: " << pb_hits_per_layer[0].size() << std::endl;
         std::cout << "Hits in 2nd layer: " << pb_hits_per_layer[1].size() << std::endl;
@@ -52,6 +51,11 @@ int main(int, char **)
                 length_to_compact<std::int32_t>(h.z)
             });
         }
+        std::sort(layer1.begin(),
+                  layer1.end(),
+                  [](const compact_pb_hit &a, const compact_pb_hit &b) {
+                      return a.phi < b.phi;
+                  });
 
         std::vector<compact_pb_hit> layer2;
         layer2.reserve(pb_hits_per_layer[1].size());
@@ -63,6 +67,11 @@ int main(int, char **)
                 length_to_compact<std::int32_t>(h.z)
             });
         }
+        std::sort(layer2.begin(),
+                  layer2.end(),
+                  [](const compact_pb_hit &a, const compact_pb_hit &b) {
+                      return a.phi < b.phi;
+                  });
 
         pb_doublet_finder finder;
         finder.set_beam_spot({

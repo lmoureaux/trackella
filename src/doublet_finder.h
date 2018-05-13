@@ -120,8 +120,8 @@ private:
 #ifdef HARDWARE_ACCELERATOR
 #else // HARDWARE_ACCELERATOR
     compact_beam_spot _bs;
-    std::vector<compact_pb_hit> _layer1;
-    std::vector<compact_pb_hit> _layer2;
+    const std::vector<compact_pb_hit> *_layer1;
+    const std::vector<compact_pb_hit> *_layer2;
     std::vector<doublet> _doublets;
     std::atomic<state> _state = state_ready;
 #endif // HARDWARE_ACCELERATOR
