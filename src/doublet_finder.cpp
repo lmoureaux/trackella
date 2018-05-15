@@ -75,32 +75,42 @@ void pb_doublet_finder::start()
 namespace /* anonymous */
 {
     /**
-     * \brief Finds z component of the impact parameter (wrt the beam spot)
+     * \brief Checks that the z component of the impact parameter is within the
+     *        beam spot
      *
      * The error on the computed value is about 1.4mm.
      */
-    int extrapolated_dz(const compact_beam_spot &bs,
-                        const compact_pb_hit &inner,
-                        const compact_pb_hit &outer)
+    bool check_dz(const compact_beam_spot &bs,
+                  const compact_pb_hit &inner,
+                  const compact_pb_hit &outer)
     {
-
         const constexpr int layer_1_r = length_to_compact<int>(3);
         const constexpr int layer_2_r = length_to_compact<int>(6.8);
 
         int inner_r = layer_1_r + inner.dr;
         int outer_r = layer_2_r + outer.dr;
 
-        int dr = outer_r - inner_r;
-
         // Need a float to compute the cos
         float inner_phi = compact_to_radians(inner.phi);
 
         int rb_proj = length_to_compact<int>(bs.r * std::cos(bs.phi - inner_phi));
 
-        int num = inner_r - rb_proj;
-        int xi = -(num << 12) / dr;
+        int num_xi = inner_r - rb_proj;
+        int dz = outer.z - inner.z;
 
-        return inner.z + (((outer.z - inner.z) * xi) >> 12) - bs.z;
+        int dr = outer_r - inner_r;
+        int a = inner.z - bs.z;
+
+        num_xi >>= 8;
+        dz >>= 8;
+        dr >>= 8;
+        a >>= 8;
+
+        int dz_times_dr = dr * a - dz * num_xi;
+
+        int bound = length_to_compact<int>(11) * std::abs(dr) >> 8;
+
+        return std::abs(dz_times_dr) < bound;
     }
 } // namespace anonymous
 #endif // HARDWARE_ACCELERATOR
@@ -145,7 +155,7 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
                 if (it2->phi > phi_high) {
                     break;
                 }
-                if (std::abs(extrapolated_dz(_bs, inner, *it2)) < length_to_compact<int>(11)) {
+                if (check_dz(_bs, inner, *it2)) {
                     _doublets.push_back({
                         std::distance(_layer1->begin(), it1),
                         std::distance(_layer2->begin(), it2)
@@ -178,7 +188,7 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
                 if (it2->phi < phi_low) {
                     break;
                 }
-                if (std::abs(extrapolated_dz(_bs, inner, *it2)) < length_to_compact<int>(11)) {
+                if (check_dz(_bs, inner, *it2)) {
                     _doublets.push_back({
                         std::distance(_layer1->begin(), it1),
                         std::distance(it2, _layer2->rend()) - 1
@@ -202,7 +212,7 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
                 if (it2->phi > phi_high) {
                     break;
                 }
-                if (std::abs(extrapolated_dz(_bs, inner, *it2)) < length_to_compact<int>(11)) {
+                if (check_dz(_bs, inner, *it2)) {
                     _doublets.push_back({
                         std::distance(it1, _layer1->rend()) - 1,
                         std::distance(_layer2->begin(), it2)
