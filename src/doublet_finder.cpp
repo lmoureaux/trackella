@@ -82,18 +82,14 @@ namespace /* anonymous */
      */
     bool check_dz(const compact_beam_spot &bs,
                   const compact_pb_hit &inner,
-                  const compact_pb_hit &outer)
+                  const compact_pb_hit &outer,
+                  int rb_proj)
     {
         const constexpr int layer_1_r = length_to_compact<int>(3);
         const constexpr int layer_2_r = length_to_compact<int>(6.8);
 
         int inner_r = layer_1_r + inner.dr;
         int outer_r = layer_2_r + outer.dr;
-
-        // Need a float to compute the cos
-        float inner_phi = compact_to_radians(inner.phi);
-
-        int rb_proj = length_to_compact<int>(bs.r * std::cos(bs.phi - inner_phi));
 
         int num_xi = inner_r - rb_proj;
         int dz = outer.z - inner.z;
@@ -147,6 +143,9 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
             while (range_begin != _layer2->end() && range_begin->phi < phi_low) {
                 ++range_begin;
             }
+            // Need a float to compute the cos
+            float inner_phi = compact_to_radians(inner.phi);
+            int rb_proj = length_to_compact<int>(_bs.r * std::cos(_bs.phi - inner_phi));
 
             // We can't use an int16 here, else it wraps around and the break
             // below happens too early.
@@ -155,7 +154,7 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
                 if (it2->phi > phi_high) {
                     break;
                 }
-                if (check_dz(_bs, inner, *it2)) {
+                if (check_dz(_bs, inner, *it2, inner_phi)) {
                     _doublets.push_back({
                         std::distance(_layer1->begin(), it1),
                         std::distance(_layer2->begin(), it2)
@@ -184,11 +183,15 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
                 break;
             }
 
+            // Need a float to compute the cos
+            float inner_phi = compact_to_radians(inner.phi);
+            int rb_proj = length_to_compact<int>(_bs.r * std::cos(_bs.phi - inner_phi));
+
             for (auto it2 = _layer2->rbegin(); it2 != _layer2->rend(); ++it2) {
                 if (it2->phi < phi_low) {
                     break;
                 }
-                if (check_dz(_bs, inner, *it2)) {
+                if (check_dz(_bs, inner, *it2, inner_phi)) {
                     _doublets.push_back({
                         std::distance(_layer1->begin(), it1),
                         std::distance(it2, _layer2->rend()) - 1
@@ -208,11 +211,15 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
                 break;
             }
 
+            // Need a float to compute the cos
+            float inner_phi = compact_to_radians(inner.phi);
+            int rb_proj = length_to_compact<int>(_bs.r * std::cos(_bs.phi - inner_phi));
+
             for (auto it2 = _layer2->begin(); it2 != _layer2->end(); ++it2) {
                 if (it2->phi > phi_high) {
                     break;
                 }
-                if (check_dz(_bs, inner, *it2)) {
+                if (check_dz(_bs, inner, *it2, inner_phi)) {
                     _doublets.push_back({
                         std::distance(it1, _layer1->rend()) - 1,
                         std::distance(_layer2->begin(), it2)
