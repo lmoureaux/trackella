@@ -5,6 +5,7 @@
 #include <TFile.h>
 #include <TH1D.h>
 #include <TH2D.h>
+#include <TPie.h>
 
 #include "doublet_finder.h"
 #include "eventreader.h"
@@ -85,6 +86,8 @@ int main(int, char **)
 
     std::chrono::duration<double> finding;
     long long doublets_found = 0;
+   
+    bool do_validation = 0;
 
     TFile out("doublets.root", "RECREATE");
 
@@ -96,8 +99,35 @@ int main(int, char **)
     TH1D doublet_z0("doublet_z0", ";z0;count", 50, -15, 15);
     TH1D doublet_b0("doublet_b0", ";b0;count", 50, 0, 0.25);
 
-    event_reader in("~lmoureau/data/v3.root");
+    TH1D trk_pt("trk_pt", "trk_pt", 20, 0, 3.0); trk_pt.Sumw2();
+    TH1D trk_eta("trk_eta", "trk_eta", 20, -2.5, 2.5); trk_eta.Sumw2();
+    TH1D trk_phi("trk_phi", "trk_phi", 20, -3.14, 3.14); trk_phi.Sumw2();
+   
+    const int doublet_eff_pt_nbins = 7;
+    float doublet_eff_pt_xbins[doublet_eff_pt_nbins+1] = {0.7,0.8,0.9,1.0,1.25,1.5,2.0,3.0};
+    TH1D doublet_all_pt("doublet_all_pt", "doublet_all_pt", doublet_eff_pt_nbins, doublet_eff_pt_xbins);
+    TH1D doublet_pass_pt("doublet_pass_pt", "doublet_pass_pt", doublet_eff_pt_nbins, doublet_eff_pt_xbins);
+    doublet_all_pt.Sumw2();
+    doublet_pass_pt.Sumw2();
+
+    const int doublet_eff_eta_nbins = 10;
+    float doublet_eff_eta_xbins[doublet_eff_eta_nbins+1] = {-2.5,-2.0,-1.5,-1.0,-0.5,0.,0.5,1.0,1.5,2.0,2.5};
+    TH1D doublet_all_eta("doublet_all_eta", "doublet_all_eta", doublet_eff_eta_nbins, doublet_eff_eta_xbins);
+    TH1D doublet_pass_eta("doublet_pass_eta", "doublet_pass_eta", doublet_eff_eta_nbins, doublet_eff_eta_xbins);
+    doublet_all_eta.Sumw2();
+    doublet_pass_eta.Sumw2();
+
+    const int doublet_eff_phi_nbins = 12;
+    float doublet_eff_phi_xbins[doublet_eff_phi_nbins+1] = {-3.14,-2.5,-2.0,-1.5,-1.0,-0.5,0.,0.5,1.0,1.5,2.0,2.5,3.14};
+    TH1D doublet_all_phi("doublet_all_phi", "doublet_all_phi", doublet_eff_phi_nbins, doublet_eff_phi_xbins);
+    TH1D doublet_pass_phi("doublet_pass_phi", "doublet_pass_phi", doublet_eff_phi_nbins, doublet_eff_phi_xbins);
+    doublet_all_phi.Sumw2();
+    doublet_pass_phi.Sumw2();
+   
+    event_reader in("output.root");
     long long i = 0;
+    float n_doub_to_track = 0;
+    float n_track = 0;
     while (in.next()) {
         std::cout << "==== Next event ====" << std::endl;
 
@@ -190,8 +220,9 @@ int main(int, char **)
         if (doublets.size() != previous_size) {
             std::cout << "Erased " << (previous_size - doublets.size())
                       << " duplicates!" << std::endl;
-        }
+        }       
 
+       int ndoub = 0;
         for (const auto &doublet : doublets) {
             const auto &h1 = layer1.at(doublet.first);
             const auto &h2 = layer2.at(doublet.second);
@@ -204,9 +235,86 @@ int main(int, char **)
 
             doublet_z0.Fill(compact_to_length(extrapolated_dz(bs, h1, h2)));
             doublet_b0.Fill(compact_to_length(extrapolated_dr(bs, h1, h2)));
-        }
-    }
+	    
+	    if( do_validation ) {
+		
+	       for (const track &t : e->tracks) {
+		  
+		  if( t.pt < 0.7 ) continue;
+		  
+		  bool foundh1 = 0;
+		  bool foundh2 = 0;
+		  
+		  int nh = 0;
+		  for (const hit &hh : t.hits) {
+		     
+		     if( nh > 1 ) break;
+		     nh++;
+		     
+		     if( ! hit_is_pixel_barrel(hh) ) continue;
+		     
+		     bool pass_phi1 = (radians_to_compact(hh.phi) == h1.phi);
+		     bool pass_phi2 = (radians_to_compact(hh.phi) == h2.phi);
+		     
+		     if( pass_phi1 ) foundh1 = 1;
+		     if( pass_phi2 ) foundh2 = 1;
+		     
+		  }
+		  
+		  if( foundh1 && foundh2 ) {
+		     
+		     doublet_pass_pt.Fill(t.pt);
+		     doublet_pass_eta.Fill(t.eta);
+		     doublet_pass_phi.Fill(t.phi);
+		     
+		     n_doub_to_track++;
+		     break;
+		     
+		  }
+		  
+	       }	   
+	    }	   
+	}
+       
+       if( do_validation ) {
+	  
+	  for (const track &t : e->tracks) {
+	     
+	     if( t.pt < 0.7 ) continue;
+	     
+	     doublet_all_pt.Fill(t.pt);
+	     doublet_all_eta.Fill(t.eta);
+	     doublet_all_phi.Fill(t.phi);
+	     
+	     trk_pt.Fill(t.pt);
+	     trk_eta.Fill(t.eta);
+	     trk_phi.Fill(t.phi);
+	     
+	     n_track++;
+	  }       
+       }       
+    }   
 
+    if( do_validation ) {
+       
+       const int nvals = 2;
+       float vals[nvals] = {n_doub_to_track,n_track-n_doub_to_track};
+       int colors[nvals] = {3,2};
+       TPie *pie = new TPie("pie","pie",nvals,vals,colors);
+       pie->SetRadius(.2);
+       pie->SetLabelsOffset(.01);
+       pie->SetLabelFormat("#splitline{%perc}{%txt}");
+       pie->SetEntryLabel(0,"Found");
+       pie->SetEntryLabel(1,"Missed");
+       
+       doublet_pass_pt.Divide(&doublet_pass_pt,&doublet_all_pt,1,1,"B");
+       doublet_pass_eta.Divide(&doublet_pass_eta,&doublet_all_eta,1,1,"B");
+       doublet_pass_phi.Divide(&doublet_pass_phi,&doublet_all_phi,1,1,"B");
+
+       out.cd();
+       if( do_validation ) pie->Write();
+    }   
+   
     std::cout << "==== Performance info ====" << std::endl;
     std::cout << "Formatted " << formatted_hits
               << " hits in " << formatting.count()
@@ -216,6 +324,9 @@ int main(int, char **)
               << " doublets in " << finding.count()
               << " s (" << (finding.count() / formatted_hits * 1e6)
               << " us)" << std::endl;
+   
+    if( do_validation )
+     std::cout << n_doub_to_track << " of doublets are found in " << n_track << " tracks " << std::endl;
 
     out.cd();
     out.Write();
