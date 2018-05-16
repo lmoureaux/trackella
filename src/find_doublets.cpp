@@ -99,6 +99,11 @@ int main(int, char **)
     TH1D doublet_z0("doublet_z0", ";z0;count", 50, -15, 15);
     TH1D doublet_b0("doublet_b0", ";b0;count", 50, 0, 0.25);
 
+    TH1D hit_count_1("hit_count_1", ";Hits in layer 1;Events", 50, 0, 1500);
+    TH1D hit_count_2("hit_count_2", ";Hits in layer 2;Events", 50, 0, 1500);
+    TH1D hit_count_12("hit_count_12", ";Number of naive doublets;Events", 50, 0, 2e6);
+    TH1D doublet_count("doublet_count", ";Number of doublets;Events", 50, 0, 7000);
+
     TH1D trk_pt("trk_pt", "trk_pt", 20, 0, 3.0); trk_pt.Sumw2();
     TH1D trk_eta("trk_eta", "trk_eta", 20, -2.5, 2.5); trk_eta.Sumw2();
     TH1D trk_phi("trk_phi", "trk_phi", 20, -3.14, 3.14); trk_phi.Sumw2();
@@ -317,9 +322,14 @@ int main(int, char **)
 	     trk_phi.Fill(t.phi);
 	     
 	     n_track++;
-	  }       
-       }       
-    }   
+	  }
+        }
+
+        hit_count_1.Fill(layer1.size());
+        hit_count_2.Fill(layer2.size());
+        hit_count_12.Fill(layer1.size() * layer2.size());
+        doublet_count.Fill(doublets.size());
+    }
 
     if( do_validation ) {
        
