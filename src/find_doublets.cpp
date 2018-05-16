@@ -245,20 +245,28 @@ int main(int, char **)
 		  bool foundh1 = 0;
 		  bool foundh2 = 0;
 		  
-		  int nh = 0;
 		  for (const hit &hh : t.hits) {
 		     
-		     if( nh > 1 ) break;
-		     nh++;
-		     
 		     if( ! hit_is_pixel_barrel(hh) ) continue;
-		     
-		     bool pass_phi1 = (radians_to_compact(hh.phi) == h1.phi);
-		     bool pass_phi2 = (radians_to_compact(hh.phi) == h2.phi);
-		     
-		     if( pass_phi1 ) foundh1 = 1;
-		     if( pass_phi2 ) foundh2 = 1;
-		     
+
+                     int layer = hit_pixel_barrel_layer(hh);
+                     if (layer == 0) {
+                        bool pass_phi = (radians_to_compact(hh.phi) == h1.phi);
+                        bool pass_z = (length_to_compact<std::int32_t>(hh.z) == h1.z);
+                        bool pass_dr = (length_to_compact<std::int16_t>(hh.r - 3) == h1.dr);
+
+                        foundh1 |= (pass_phi && pass_z && pass_dr);
+                     } else if (layer == 1) {
+                        bool pass_phi = (radians_to_compact(hh.phi) == h2.phi);
+                        bool pass_z = (length_to_compact<std::int32_t>(hh.z) == h2.z);
+                        bool pass_dr = (length_to_compact<std::int16_t>(hh.r - 6.8) == h2.dr);
+
+                        foundh2 |= (pass_phi && pass_z && pass_dr);
+                     }
+
+                     if (foundh1 && foundh2) {
+                         break;
+                     }
 		  }
 		  
 		  if( foundh1 && foundh2 ) {
