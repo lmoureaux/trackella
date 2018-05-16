@@ -134,6 +134,7 @@ int main(int, char **)
     float n_doub_to_track = 0;
     float n_track = 0;
     while (in.next()) {
+        i++;
         std::cout << "==== Next event ====" << std::endl;
 
         std::unique_ptr<event> e = in.get();
@@ -354,12 +355,12 @@ int main(int, char **)
     std::cout << "==== Performance info ====" << std::endl;
     std::cout << "Formatted " << formatted_hits
               << " hits in " << formatting.count()
-              << " s (" << (formatting.count() / formatted_hits * 1e6)
-              << " us)" << std::endl;
+              << " s (" << (1e5 * formatting.count() / i)
+              << " ms/event)" << std::endl;
     std::cout << "Found " << doublets_found
               << " doublets in " << finding.count()
-              << " s (" << (finding.count() / formatted_hits * 1e6)
-              << " us)" << std::endl;
+              << " s (" << (1e5 * finding.count() / i)
+              << " ms/event)" << std::endl;
    
     if( do_validation )
      std::cout << n_doub_to_track << " of doublets are found in " << n_track << " tracks " << std::endl;
