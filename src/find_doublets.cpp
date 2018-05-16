@@ -289,6 +289,24 @@ int main(int, char **)
 	  for (const track &t : e->tracks) {
 	     
 	     if( t.pt < 0.7 ) continue;
+
+             bool has_hit_in_layer_1 = false;
+             bool has_hit_in_layer_2 = false;
+
+             for (const hit &hh : t.hits) {
+                if (hit_is_pixel_barrel(hh)) {
+                    has_hit_in_layer_1 |= (hit_pixel_barrel_layer(hh) == 0);
+                    has_hit_in_layer_2 |= (hit_pixel_barrel_layer(hh) == 1);
+
+                    if (has_hit_in_layer_1 && has_hit_in_layer_2) {
+                        break;
+                    }
+                }
+             }
+
+             if (!has_hit_in_layer_1 || !has_hit_in_layer_2) {
+                continue;
+             }
 	     
 	     doublet_all_pt.Fill(t.pt);
 	     doublet_all_eta.Fill(t.eta);
