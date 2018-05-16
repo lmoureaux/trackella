@@ -154,7 +154,7 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
                 if (it2->phi > phi_high) {
                     break;
                 }
-                if (check_dz(_bs, inner, *it2, inner_phi)) {
+                if (check_dz(_bs, inner, *it2, rb_proj)) {
                     _doublets.push_back({
                         std::distance(_layer1->begin(), it1),
                         std::distance(_layer2->begin(), it2)
@@ -191,7 +191,7 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
                 if (it2->phi < phi_low) {
                     break;
                 }
-                if (check_dz(_bs, inner, *it2, inner_phi)) {
+                if (check_dz(_bs, inner, *it2, rb_proj)) {
                     _doublets.push_back({
                         std::distance(_layer1->begin(), it1),
                         std::distance(it2, _layer2->rend()) - 1
@@ -219,7 +219,7 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
                 if (it2->phi > phi_high) {
                     break;
                 }
-                if (check_dz(_bs, inner, *it2, inner_phi)) {
+                if (check_dz(_bs, inner, *it2, rb_proj)) {
                     _doublets.push_back({
                         std::distance(it1, _layer1->rend()) - 1,
                         std::distance(_layer2->begin(), it2)
