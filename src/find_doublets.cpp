@@ -138,6 +138,31 @@ int main(int, char **)
         std::cout << "==== Next event ====" << std::endl;
 
         std::unique_ptr<event> e = in.get();
+
+        std::vector<track> interesting_tracks;
+        std::copy_if(e->tracks.begin(),
+                     e->tracks.end(),
+                     std::back_inserter(interesting_tracks),
+                     [](const track &trk) {
+                        if (trk.pt < 0.7) return false;
+
+                        bool has_hit_in_layer_1 = false;
+                        bool has_hit_in_layer_2 = false;
+
+                        for (const hit &hh : trk.hits) {
+                            if (hit_is_pixel_barrel(hh)) {
+                                has_hit_in_layer_1 |= (hit_pixel_barrel_layer(hh) == 0);
+                                has_hit_in_layer_2 |= (hit_pixel_barrel_layer(hh) == 1);
+
+                                if (has_hit_in_layer_1 && has_hit_in_layer_2) {
+                                    break;
+                                }
+                            }
+                        }
+                        return has_hit_in_layer_1 && has_hit_in_layer_2;
+                     }
+                    );
+
         std::sort(e->hits.begin(), e->hits.end(), hit_less_than);
         e->hits.erase(std::unique(e->hits.begin(), e->hits.end(), hit_equal),
                       e->hits.end());
@@ -244,10 +269,7 @@ int main(int, char **)
 	    
 	    if( do_validation ) {
 		
-	       for (const track &t : e->tracks) {
-		  
-		  if( t.pt < 0.7 ) continue;
-		  
+                for (const track &t : interesting_tracks) {
 		  bool foundh1 = 0;
 		  bool foundh2 = 0;
 		  
@@ -292,28 +314,7 @@ int main(int, char **)
        
        if( do_validation ) {
 	  
-	  for (const track &t : e->tracks) {
-	     
-	     if( t.pt < 0.7 ) continue;
-
-             bool has_hit_in_layer_1 = false;
-             bool has_hit_in_layer_2 = false;
-
-             for (const hit &hh : t.hits) {
-                if (hit_is_pixel_barrel(hh)) {
-                    has_hit_in_layer_1 |= (hit_pixel_barrel_layer(hh) == 0);
-                    has_hit_in_layer_2 |= (hit_pixel_barrel_layer(hh) == 1);
-
-                    if (has_hit_in_layer_1 && has_hit_in_layer_2) {
-                        break;
-                    }
-                }
-             }
-
-             if (!has_hit_in_layer_1 || !has_hit_in_layer_2) {
-                continue;
-             }
-	     
+            for (const track &t : interesting_tracks) {
 	     doublet_all_pt.Fill(t.pt);
 	     doublet_all_eta.Fill(t.eta);
 	     doublet_all_phi.Fill(t.phi);
