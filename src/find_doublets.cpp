@@ -84,6 +84,9 @@ int main(int, char **)
     std::chrono::duration<double> formatting;
     long long formatted_hits = 0;
 
+    std::chrono::duration<double> sorting;
+    long long sorted_hits = 0;
+
     std::chrono::duration<double> finding;
     long long doublets_found = 0;
    
@@ -190,11 +193,6 @@ int main(int, char **)
                 length_to_compact<std::int32_t>(h.z)
             });
         }
-        std::sort(layer1.begin(),
-                  layer1.end(),
-                  [](const compact_pb_hit &a, const compact_pb_hit &b) {
-                      return a.phi < b.phi;
-                  });
 
         std::vector<compact_pb_hit> layer2;
         layer2.reserve(pb_hits_per_layer[1].size());
@@ -206,6 +204,17 @@ int main(int, char **)
                 length_to_compact<std::int32_t>(h.z)
             });
         }
+
+        sorting += std::chrono::high_resolution_clock::now() - start;
+        sorted_hits += layer1.size();
+        sorted_hits += layer2.size();
+        start = std::chrono::high_resolution_clock::now();
+
+        std::sort(layer1.begin(),
+                  layer1.end(),
+                  [](const compact_pb_hit &a, const compact_pb_hit &b) {
+                      return a.phi < b.phi;
+                  });
         std::sort(layer2.begin(),
                   layer2.end(),
                   [](const compact_pb_hit &a, const compact_pb_hit &b) {
@@ -224,7 +233,7 @@ int main(int, char **)
 
         formatting += std::chrono::high_resolution_clock::now() - start;
         formatted_hits += layer1.size();
-        formatted_hits += layer1.size();
+        formatted_hits += layer2.size();
         start = std::chrono::high_resolution_clock::now();
 
         finder.start();
@@ -356,12 +365,16 @@ int main(int, char **)
     std::cout << "==== Performance info ====" << std::endl;
     std::cout << "Formatted " << formatted_hits
               << " hits in " << formatting.count()
-              << " s (" << (1e5 * formatting.count() / i)
-              << " ms/event)" << std::endl;
+              << " s (" << (1e6 * formatting.count() / i)
+              << " us/event)" << std::endl;
+    std::cout << "Sorted    " << sorted_hits
+              << " hits in " << sorting.count()
+              << " s (" << (1e6 * sorting.count() / i)
+              << " us/event)" << std::endl;
     std::cout << "Found " << doublets_found
               << " doublets in " << finding.count()
-              << " s (" << (1e5 * finding.count() / i)
-              << " ms/event)" << std::endl;
+              << " s (" << (1e6 * finding.count() / i)
+              << " us/event)" << std::endl;
    
     if( do_validation )
      std::cout << n_doub_to_track << " of doublets are found in " << n_track << " tracks " << std::endl;
