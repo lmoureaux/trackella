@@ -22,9 +22,9 @@ float deltaphi(float phi1, float phi2)
     return delta;
 }
 
-int extrapolated_xi(const compact_beam_spot &bs,
-                    const compact_pb_hit &inner,
-                    const compact_pb_hit &outer)
+double extrapolated_xi(const compact_beam_spot &bs,
+                       const compact_pb_hit &inner,
+                       const compact_pb_hit &outer)
 {
     const constexpr int layer_1_r = length_to_compact<int>(3);
     const constexpr int layer_2_r = length_to_compact<int>(6.8);
@@ -40,7 +40,7 @@ int extrapolated_xi(const compact_beam_spot &bs,
     int rb_proj = length_to_compact<int>(bs.r * std::cos(bs.phi - inner_phi));
 
     int num = inner_r - rb_proj;
-    return -(num << 12) / dr;
+    return -double(num) / dr;
 }
 
 /**
@@ -75,8 +75,8 @@ int extrapolated_dz(const compact_beam_spot &bs,
                     const compact_pb_hit &inner,
                     const compact_pb_hit &outer)
 {
-    int xi = extrapolated_xi(bs, inner, outer);
-    return inner.z + (((outer.z - inner.z) * xi) >> 12) - bs.z;
+    double xi = extrapolated_xi(bs, inner, outer);
+    return inner.z + (outer.z - inner.z) * xi - bs.z;
 }
 
 int main(int, char **)
