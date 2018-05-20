@@ -107,6 +107,9 @@ int main(int, char **)
     TH1D hit_count_12("hit_count_12", ";Number of naive doublets;Events", 50, 0, 2e6);
     TH1D doublet_count("doublet_count", ";Number of doublets;Events", 50, 0, 7000);
 
+    TH1D duration("duration", ";Duration (us);Events", 50, 0, 2500);
+    TH2D duration_vs_nvtx("duration_vs_nvtx", ";#vtx;Duration (us)", 50, 0, 75, 50, 0, 2500);
+
     TH1D trk_pt("trk_pt", "trk_pt", 20, 0, 3.0); trk_pt.Sumw2();
     TH1D trk_eta("trk_eta", "trk_eta", 20, -2.5, 2.5); trk_eta.Sumw2();
     TH1D trk_phi("trk_phi", "trk_phi", 20, -3.14, 3.14); trk_phi.Sumw2();
@@ -132,7 +135,10 @@ int main(int, char **)
     doublet_all_phi.Sumw2();
     doublet_pass_phi.Sumw2();
    
-    event_reader in("output.root");
+//     event_reader in("output.root");
+
+    event_reader in("~lmoureau/data/v3.root");
+
     long long i = 0;
     float n_doub_to_track = 0;
     float n_track = 0;
@@ -205,10 +211,10 @@ int main(int, char **)
             });
         }
 
-        sorting += std::chrono::high_resolution_clock::now() - start;
+        formatting += std::chrono::high_resolution_clock::now() - start;
         sorted_hits += layer1.size();
         sorted_hits += layer2.size();
-        start = std::chrono::high_resolution_clock::now();
+        auto sorting_start = std::chrono::high_resolution_clock::now();
 
         std::sort(layer1.begin(),
                   layer1.end(),
@@ -231,17 +237,23 @@ int main(int, char **)
         finder.set_beam_spot(bs);
         finder.set_hits(layer1, layer2);
 
-        formatting += std::chrono::high_resolution_clock::now() - start;
+        sorting += std::chrono::high_resolution_clock::now() - sorting_start;
         formatted_hits += layer1.size();
         formatted_hits += layer2.size();
-        start = std::chrono::high_resolution_clock::now();
+        auto finding_start = std::chrono::high_resolution_clock::now();
 
         finder.start();
 
         std::vector<pb_doublet_finder::doublet> doublets;
         finder.get_doublets(doublets);
 
-        finding += std::chrono::high_resolution_clock::now() - start;
+        auto end = std::chrono::high_resolution_clock::now();
+        finding += end - finding_start;
+
+        std::chrono::duration<double> event_duration = end - start;
+        duration_vs_nvtx.Fill(e->nvtx, 1e6 * event_duration.count());
+        duration.Fill(1e6 * event_duration.count());
+
         doublets_found += doublets.size();
 
         if (doublets.empty()) {

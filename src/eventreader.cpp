@@ -28,6 +28,7 @@ struct event_reader::data
     TTreeReaderArray<float> trk_seed_globalPos_x;
     TTreeReaderArray<float> trk_seed_globalPos_y;
     TTreeReaderArray<float> trk_seed_globalPos_z;
+    TTreeReaderArray<int>   vtx_n;
 
     data(const std::string &filename);
 };
@@ -50,7 +51,8 @@ event_reader::data::data(const std::string &filename) :
     trk_seed_n(reader, "trk_seed_n"),
     trk_seed_globalPos_x(reader, "trk_seed_globalPos_x"),
     trk_seed_globalPos_y(reader, "trk_seed_globalPos_y"),
-    trk_seed_globalPos_z(reader, "trk_seed_globalPos_z")
+    trk_seed_globalPos_z(reader, "trk_seed_globalPos_z"),
+    vtx_n(reader, "vtx_n")
 {
 }
 
@@ -143,6 +145,7 @@ std::unique_ptr<event> event_reader::get()
     e->bs = std::move(bs);
     e->hits = std::move(hits);
     e->tracks = std::move(tracks);
+    e->nvtx = _d->vtx_n[0];
     return e;
 }
 

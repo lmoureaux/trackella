@@ -27,6 +27,7 @@ struct event
     beam_spot bs;
     std::vector<hit> hits;
     std::vector<track> tracks;
+    int nvtx;
 };
 
 
