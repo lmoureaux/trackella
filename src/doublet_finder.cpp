@@ -82,10 +82,10 @@ namespace /* anonymous */
      *
      * The error on the computed value is about 1.4mm.
      */
-    bool check_dz(const compact_beam_spot &bs,
-                  const compact_pb_hit &inner,
+    bool check_dz(const compact_pb_hit &inner,
                   const compact_pb_hit &outer,
-                  int rb_proj)
+                  int rb_proj,
+                  int b_dz)
     {
         const constexpr int layer_1_r = length_to_compact<int>(3);
         const constexpr int layer_2_r = length_to_compact<int>(6.8);
@@ -97,14 +97,12 @@ namespace /* anonymous */
         int dz = outer.z - inner.z;
 
         int dr = outer_r - inner_r;
-        int a = inner.z - bs.z;
 
         num_xi >>= 8;
         dz >>= 8;
         dr >>= 8;
-        a >>= 8;
 
-        int dz_times_dr = dr * a - dz * num_xi;
+        int dz_times_dr = dr * b_dz - dz * num_xi;
 
         int bound = length_to_compact<int>(11) * std::abs(dr) >> 8;
 
@@ -146,17 +144,10 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
         std::size_t iterations = 0;
 
         auto range_begin = _layer2->begin();
+        auto range_end = range_begin;
 
         for (auto it1 = _layer1->begin(); it1 != _layer1->end(); ++it1) {
             const auto &inner = *it1;
-
-            // We can't use an int16 here, else it wraps around in the first
-            // iteration, gets negative and the condition in the while loop is
-            // always false
-            const int phi_low = inner.phi - window_width;
-            while (range_begin != _layer2->end() && range_begin->phi < phi_low) {
-                ++range_begin;
-            }
 
             sincos.step(_bs.phi - inner.phi);
             if (iterations % 64 == 0) {
@@ -165,15 +156,25 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
             iterations++;
 
             int rb_proj = sincos.cos_times(_bs.r);
+            int b_dz = (inner.z - _bs.z) >> 8;
+
+            // We can't use an int16 here, else it wraps around in the first
+            // iteration, gets negative and the condition in the while loop is
+            // always false
+            const int phi_low = inner.phi - window_width;
+            while (range_begin->phi < phi_low && range_begin != _layer2->end()) {
+                ++range_begin;
+            }
 
             // We can't use an int16 here, else it wraps around and the break
             // below happens too early.
             const int phi_high = inner.phi + window_width;
-            for (auto it2 = range_begin; it2 != _layer2->end(); ++it2) {
-                if (it2->phi > phi_high) {
-                    break;
-                }
-                if (check_dz(_bs, inner, *it2, rb_proj)) {
+            while (range_end->phi <= phi_high && range_end != _layer2->end()) {
+                 ++range_end;
+            }
+
+            for (auto it2 = range_begin; it2 != range_end; ++it2) {
+                if (check_dz(inner, *it2, rb_proj, b_dz)) {
                     _doublets[index].first = std::distance(_layer1->begin(), it1);
                     _doublets[index].second = std::distance(_layer2->begin(), it2);
                     ++index;
@@ -203,13 +204,15 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
 
             // Need a float to compute the cos
             float inner_phi = compact_to_radians(inner.phi);
+            // FIXME Update
             int rb_proj = length_to_compact<int>(_bs.r * std::cos(_bs.phi - inner_phi));
+            int b_dz = (inner.z - _bs.z) >> 8;
 
             for (auto it2 = _layer2->rbegin(); it2 != _layer2->rend(); ++it2) {
                 if (it2->phi < phi_low) {
                     break;
                 }
-                if (check_dz(_bs, inner, *it2, rb_proj)) {
+                if (check_dz(inner, *it2, rb_proj, b_dz)) {
                     _doublets[index].first = std::distance(_layer1->begin(), it1);
                     _doublets[index].second = std::distance(it2, _layer2->rend()) - 1;
                     ++index;
@@ -230,13 +233,15 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
 
             // Need a float to compute the cos
             float inner_phi = compact_to_radians(inner.phi);
+            // FIXME Update
             int rb_proj = length_to_compact<int>(_bs.r * std::cos(_bs.phi - inner_phi));
+            int b_dz = (inner.z - _bs.z) >> 8;
 
             for (auto it2 = _layer2->begin(); it2 != _layer2->end(); ++it2) {
                 if (it2->phi > phi_high) {
                     break;
                 }
-                if (check_dz(_bs, inner, *it2, rb_proj)) {
+                if (check_dz(inner, *it2, rb_proj, b_dz)) {
                     _doublets[index].first = std::distance(it1, _layer1->rend()) - 1;
                     _doublets[index].second = std::distance(_layer2->begin(), it2);
                     ++index;
