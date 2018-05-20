@@ -4,6 +4,8 @@
 #include <cassert>
 #include <cmath>
 
+#include "fast_sincos.h"
+
 std::size_t pb_doublet_finder::get_doublets(
     std::vector<pb_doublet_finder::doublet> &output)
 {
@@ -123,13 +125,25 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
     // TODO
 #else // HARDWARE_ACCELERATOR
     if (cmd == command::start) {
+        if (_layer1->empty()) {
+            _state ^= state_ready;
+            _state ^= state_out_of_memory;
+            _state |= state_finished;
+            return;
+        }
+
         _state ^= state_ready;
         _state ^= state_out_of_memory;
         _state |= state_processing;
 
-        _doublets.reserve(_layer1->size() * _layer2->size() / 128);
+        std::size_t index = 0;
+
+        _doublets.resize(_layer1->size() * _layer2->size() / 64);
 
         const std::int16_t window_width = radians_to_compact(0.04);
+
+        fast_sincos sincos(_bs.phi - _layer1->front().phi);
+        std::size_t iterations = 0;
 
         auto range_begin = _layer2->begin();
 
@@ -143,9 +157,14 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
             while (range_begin != _layer2->end() && range_begin->phi < phi_low) {
                 ++range_begin;
             }
-            // Need a float to compute the cos
-            float inner_phi = compact_to_radians(inner.phi);
-            int rb_proj = length_to_compact<int>(_bs.r * std::cos(_bs.phi - inner_phi));
+
+            sincos.step(_bs.phi - inner.phi);
+            if (iterations % 64 == 0) {
+                sincos.sync(_bs.phi - inner.phi);
+            }
+            iterations++;
+
+            int rb_proj = sincos.cos_times(_bs.r);
 
             // We can't use an int16 here, else it wraps around and the break
             // below happens too early.
@@ -155,10 +174,9 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
                     break;
                 }
                 if (check_dz(_bs, inner, *it2, rb_proj)) {
-                    _doublets.push_back({
-                        std::distance(_layer1->begin(), it1),
-                        std::distance(_layer2->begin(), it2)
-                    });
+                    _doublets[index].first = std::distance(_layer1->begin(), it1);
+                    _doublets[index].second = std::distance(_layer2->begin(), it2);
+                    ++index;
                 }
             }
         }
@@ -192,10 +210,9 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
                     break;
                 }
                 if (check_dz(_bs, inner, *it2, rb_proj)) {
-                    _doublets.push_back({
-                        std::distance(_layer1->begin(), it1),
-                        std::distance(it2, _layer2->rend()) - 1
-                    });
+                    _doublets[index].first = std::distance(_layer1->begin(), it1);
+                    _doublets[index].second = std::distance(it2, _layer2->rend()) - 1;
+                    ++index;
                 }
             }
         }
@@ -220,13 +237,14 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
                     break;
                 }
                 if (check_dz(_bs, inner, *it2, rb_proj)) {
-                    _doublets.push_back({
-                        std::distance(it1, _layer1->rend()) - 1,
-                        std::distance(_layer2->begin(), it2)
-                    });
+                    _doublets[index].first = std::distance(it1, _layer1->rend()) - 1;
+                    _doublets[index].second = std::distance(_layer2->begin(), it2);
+                    ++index;
                 }
             }
         }
+
+        _doublets.resize(index);
 
         _state ^= state_processing;
         _state |= state_finished;

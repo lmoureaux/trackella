@@ -43,9 +43,9 @@ template<class T> constexpr T length_to_compact(float length)
  */
 struct compact_beam_spot
 {
-    float r;        ///< \brief Radius (cm)
-    float phi;      ///< \brief Azimutal angle (rad)
-    std::int32_t z; ///< \brief Position along the \c z axis
+    std::int32_t r;   ///< \brief Radius (cm)
+    std::int32_t z;   ///< \brief Position along the \c z axis
+    std::int16_t phi; ///< \brief Azimutal angle (compact representation)
 };
 
 /**

@@ -228,9 +228,9 @@ int main(int, char **)
                   });
 
         compact_beam_spot bs{
-            e->bs.r,
-            e->bs.phi,
-            length_to_compact<std::int32_t>(e->bs.z)
+            length_to_compact<std::int32_t>(e->bs.r),
+            length_to_compact<std::int32_t>(e->bs.z),
+            radians_to_compact(e->bs.phi)
         };
 
         pb_doublet_finder finder;
