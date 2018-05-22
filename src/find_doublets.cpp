@@ -10,6 +10,7 @@
 
 #include "doublet_finder.h"
 #include "eventreader.h"
+#include "geometry.h"
 #include "hitutils.h"
 
 float deltaphi(float phi1, float phi2)
@@ -206,9 +207,10 @@ int main(int, char **)
         std::vector<compact_pb_hit> layer1;
         layer1.reserve(pb_hits_per_layer[0].size());
         for (const hit &h : pb_hits_per_layer[0]) {
-            assert(std::abs(h.r - 3) < 2);
+            assert(std::abs(h.r - geom::real::pixel_barrel_radius[0]) < 2);
             layer1.push_back({
-                length_to_compact<std::int16_t>(h.r - 3),
+                length_to_compact<std::int16_t>(
+                    h.r - geom::real::pixel_barrel_radius[0]),
                 radians_to_compact(h.phi),
                 length_to_compact<std::int32_t>(h.z)
             });
@@ -217,9 +219,10 @@ int main(int, char **)
         std::vector<compact_pb_hit> layer2;
         layer2.reserve(pb_hits_per_layer[1].size());
         for (const hit &h : pb_hits_per_layer[1]) {
-            assert(std::abs(h.r - 6.8) < 2);
+            assert(std::abs(h.r - geom::real::pixel_barrel_radius[1]) < 2);
             layer2.push_back({
-                length_to_compact<std::int16_t>(h.r - 6.8),
+                length_to_compact<std::int16_t>(
+                    h.r - geom::real::pixel_barrel_radius[1]),
                 radians_to_compact(h.phi),
                 length_to_compact<std::int32_t>(h.z)
             });
