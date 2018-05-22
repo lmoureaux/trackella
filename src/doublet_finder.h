@@ -19,6 +19,9 @@ public:
     /// \brief The type to use for the beam spot
     using beam_spot_type = compact_beam_spot;
 
+    /// \brief Convert hits to the correct representation
+    std::vector<hit_type> convert(const std::vector<hit> &hits, int layer) const;
+
     /**
      * \brief Gets back the produced doublets.
      *

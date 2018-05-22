@@ -6,6 +6,17 @@
 
 #include "fast_sincos.h"
 
+std::vector<cpu_doublet_finder::hit_type> cpu_doublet_finder::convert(
+        const std::vector<hit> &hits, int layer) const
+{
+    std::vector<hit_type> res;
+    res.reserve(hits.size());
+    for (const hit &h : hits) {
+        res.emplace_back(h, 1);
+    }
+    return res;
+}
+
 std::size_t cpu_doublet_finder::get_doublets(
     std::vector<cpu_doublet_finder::doublet> &output)
 {

@@ -202,34 +202,25 @@ int main(int, char **)
 
         std::cout << "Making doublets..." << std::endl;
 
+        cpu_doublet_finder finder;
+
         auto start = std::chrono::high_resolution_clock::now();
 
-        std::vector<compact_hit> layer1;
-        layer1.reserve(pb_hits_per_layer[0].size());
-        for (const hit &h : pb_hits_per_layer[0]) {
-            layer1.emplace_back(h, 0);
-        }
-
-        std::vector<compact_hit> layer2;
-        layer2.reserve(pb_hits_per_layer[1].size());
-        for (const hit &h : pb_hits_per_layer[1]) {
-            layer2.emplace_back(h, 1);
-        }
-
-        cpu_doublet_finder finder;
+        auto layer1 = finder.convert(pb_hits_per_layer[0], 0);
+        auto layer2 = finder.convert(pb_hits_per_layer[1], 1);
 
         formatting = std::chrono::high_resolution_clock::now() - start;
         formatting_acc += formatting;
-        sorted_hits += layer1.size();
-        sorted_hits += layer2.size();
+        formatted_hits += layer1.size();
+        formatted_hits += layer2.size();
         auto sorting_start = std::chrono::high_resolution_clock::now();
 
         finder.sort_hits(layer1, layer2);
 
         sorting = std::chrono::high_resolution_clock::now() - sorting_start;
         sorting_acc += sorting;
-        formatted_hits += layer1.size();
-        formatted_hits += layer2.size();
+        sorted_hits += layer1.size();
+        sorted_hits += layer2.size();
         auto finding_start = std::chrono::high_resolution_clock::now();
 
         compact_beam_spot bs{
