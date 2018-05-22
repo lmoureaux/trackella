@@ -3,6 +3,9 @@
 
 #include <cstdint>
 
+#include "geometry.h"
+#include "event.h"
+
 const constexpr float pi = 3.141592653589793f;
 
 /**
@@ -81,6 +84,15 @@ struct compact_hit
      * Range: -1.3km to 1.3km.
      */
     std::int32_t z;
+
+    /**
+     * \brief Constructor
+     */
+    explicit compact_hit(const hit &h, int layer) :
+        dr(length_to_compact<std::int16_t>(h.r - geom::pixel_barrel_radius[layer])),
+        phi(radians_to_compact(h.phi)),
+        z(length_to_compact<int>(h.z))
+    {}
 };
 static_assert(sizeof(compact_hit) == 8);
 
