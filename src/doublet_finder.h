@@ -30,6 +30,14 @@ public:
     /**
      * \brief Pushes hits to the machine.
      *
+     * You are responsible for passing back the vectors to \ref set_hits.
+     */
+    void sort_hits(std::vector<compact_hit> &layer1,
+                   std::vector<compact_hit> &layer2);
+
+    /**
+     * \brief Pushes hits to the machine.
+     *
      * The vectors have to remain valid until all results have been read.
      */
     void set_hits(const std::vector<compact_hit> &layer1,

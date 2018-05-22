@@ -26,6 +26,21 @@ std::size_t cpu_doublet_finder::get_doublets(
     }
 }
 
+void cpu_doublet_finder::sort_hits(std::vector<compact_hit> &layer1,
+                                   std::vector<compact_hit> &layer2)
+{
+    std::sort(layer1.begin(),
+              layer1.end(),
+              [](const compact_hit &a, const compact_hit &b) {
+                  return a.phi < b.phi;
+              });
+    std::sort(layer2.begin(),
+              layer2.end(),
+              [](const compact_hit &a, const compact_hit &b) {
+                  return a.phi < b.phi;
+              });
+}
+
 void cpu_doublet_finder::set_hits(const std::vector<compact_hit> &layer1,
                                  const std::vector<compact_hit> &layer2)
 {

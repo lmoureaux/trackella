@@ -216,22 +216,15 @@ int main(int, char **)
             layer2.emplace_back(h, 1);
         }
 
+        cpu_doublet_finder finder;
+
         formatting = std::chrono::high_resolution_clock::now() - start;
         formatting_acc += formatting;
         sorted_hits += layer1.size();
         sorted_hits += layer2.size();
         auto sorting_start = std::chrono::high_resolution_clock::now();
 
-        std::sort(layer1.begin(),
-                  layer1.end(),
-                  [](const compact_hit &a, const compact_hit &b) {
-                      return a.phi < b.phi;
-                  });
-        std::sort(layer2.begin(),
-                  layer2.end(),
-                  [](const compact_hit &a, const compact_hit &b) {
-                      return a.phi < b.phi;
-                  });
+        finder.sort_hits(layer1, layer2);
 
         compact_beam_spot bs{
             length_to_compact<std::int32_t>(e->bs.r),
@@ -239,7 +232,6 @@ int main(int, char **)
             radians_to_compact(e->bs.phi)
         };
 
-        cpu_doublet_finder finder;
         finder.set_beam_spot(bs);
         finder.set_hits(layer1, layer2);
 
