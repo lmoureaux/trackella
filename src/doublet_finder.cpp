@@ -21,17 +21,18 @@ std::size_t cpu_doublet_finder::get_doublets(
     }
 }
 
-void cpu_doublet_finder::sort_hits(std::vector<compact_hit> &layer1,
-                                   std::vector<compact_hit> &layer2)
+void cpu_doublet_finder::sort_hits(
+        std::vector<cpu_doublet_finder::hit_type> &layer1,
+        std::vector<cpu_doublet_finder::hit_type> &layer2)
 {
     std::sort(layer1.begin(),
               layer1.end(),
-              [](const compact_hit &a, const compact_hit &b) {
+              [](const hit_type &a, const hit_type &b) {
                   return a.phi < b.phi;
               });
     std::sort(layer2.begin(),
               layer2.end(),
-              [](const compact_hit &a, const compact_hit &b) {
+              [](const hit_type &a, const hit_type &b) {
                   return a.phi < b.phi;
               });
 }
@@ -72,9 +73,10 @@ namespace /* anonymous */
     }
 } // namespace anonymous
 
-void cpu_doublet_finder::find(const compact_beam_spot &bs,
-                              const std::vector<compact_hit> &layer1,
-                              const std::vector<compact_hit> &layer2)
+void cpu_doublet_finder::find(
+        const cpu_doublet_finder::beam_spot_type &bs,
+        const std::vector<cpu_doublet_finder::hit_type> &layer1,
+        const std::vector<cpu_doublet_finder::hit_type> &layer2)
 {
     if (layer1.empty() || layer2.empty()) {
         return;
