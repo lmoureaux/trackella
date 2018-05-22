@@ -82,13 +82,13 @@ int extrapolated_dz(const compact_beam_spot &bs,
 
 int main(int, char **)
 {
-    std::chrono::duration<double> formatting;
+    std::chrono::duration<double> formatting, formatting_acc;
     long long formatted_hits = 0;
 
-    std::chrono::duration<double> sorting;
+    std::chrono::duration<double> sorting, sorting_acc;
     long long sorted_hits = 0;
 
-    std::chrono::duration<double> finding;
+    std::chrono::duration<double> finding, finding_acc;
     long long doublets_found = 0;
    
     bool do_validation = 0;
@@ -102,10 +102,11 @@ int main(int, char **)
     std::vector<int> doublets_outer;
     tree.Branch("outer", &doublets_outer);
 
-    double formatting_seconds, sorting_seconds, finding_seconds;
+    double formatting_seconds, sorting_seconds, finding_seconds, total_seconds;
     tree.Branch("formatting_seconds", &formatting_seconds);
     tree.Branch("sorting_seconds", &sorting_seconds);
     tree.Branch("finding_seconds", &finding_seconds);
+    tree.Branch("total_seconds", &total_seconds);
 
     TH1D doublet_phi1("doublet_phi1", ";phi1;count", 50, -pi, pi);
     TH1D doublet_phi2("doublet_phi2", ";phi2;count", 50, -pi, pi);
@@ -224,7 +225,8 @@ int main(int, char **)
             });
         }
 
-        formatting += std::chrono::high_resolution_clock::now() - start;
+        formatting = std::chrono::high_resolution_clock::now() - start;
+        formatting_acc += formatting;
         sorted_hits += layer1.size();
         sorted_hits += layer2.size();
         auto sorting_start = std::chrono::high_resolution_clock::now();
@@ -250,7 +252,8 @@ int main(int, char **)
         finder.set_beam_spot(bs);
         finder.set_hits(layer1, layer2);
 
-        sorting += std::chrono::high_resolution_clock::now() - sorting_start;
+        sorting = std::chrono::high_resolution_clock::now() - sorting_start;
+        sorting_acc += sorting;
         formatted_hits += layer1.size();
         formatted_hits += layer2.size();
         auto finding_start = std::chrono::high_resolution_clock::now();
@@ -261,7 +264,8 @@ int main(int, char **)
         finder.get_doublets(doublets);
 
         auto end = std::chrono::high_resolution_clock::now();
-        finding += end - finding_start;
+        finding = end - finding_start;
+        finding_acc += finding;
 
         std::chrono::duration<double> event_duration = end - start;
         duration_vs_nvtx.Fill(e->nvtx, 1e6 * event_duration.count());
@@ -293,6 +297,7 @@ int main(int, char **)
         formatting_seconds = formatting.count();
         sorting_seconds = sorting.count();
         finding_seconds = finding.count();
+        total_seconds = event_duration.count();
 
        int ndoub = 0;
         for (const auto &doublet : doublets) {
@@ -401,16 +406,16 @@ int main(int, char **)
    
     std::cout << "==== Performance info ====" << std::endl;
     std::cout << "Formatted " << formatted_hits
-              << " hits in " << formatting.count()
-              << " s (" << (1e6 * formatting.count() / i)
+              << " hits in " << formatting_acc.count()
+              << " s (" << (1e6 * formatting_acc.count() / i)
               << " us/event)" << std::endl;
     std::cout << "Sorted    " << sorted_hits
-              << " hits in " << sorting.count()
-              << " s (" << (1e6 * sorting.count() / i)
+              << " hits in " << sorting_acc.count()
+              << " s (" << (1e6 * sorting_acc.count() / i)
               << " us/event)" << std::endl;
     std::cout << "Found " << doublets_found
-              << " doublets in " << finding.count()
-              << " s (" << (1e6 * finding.count() / i)
+              << " doublets in " << finding_acc.count()
+              << " s (" << (1e6 * finding_acc.count() / i)
               << " us/event)" << std::endl;
    
     if( do_validation )
