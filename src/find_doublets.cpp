@@ -233,7 +233,6 @@ int main(int, char **)
         };
 
         finder.set_beam_spot(bs);
-        finder.set_hits(layer1, layer2);
 
         sorting = std::chrono::high_resolution_clock::now() - sorting_start;
         sorting_acc += sorting;
@@ -241,7 +240,7 @@ int main(int, char **)
         formatted_hits += layer2.size();
         auto finding_start = std::chrono::high_resolution_clock::now();
 
-        finder.start();
+        finder.find(layer1, layer2);
 
         std::vector<cpu_doublet_finder::doublet> doublets;
         finder.get_doublets(doublets);

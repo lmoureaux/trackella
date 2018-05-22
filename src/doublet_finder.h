@@ -36,20 +36,13 @@ public:
                    std::vector<compact_hit> &layer2);
 
     /**
-     * \brief Pushes hits to the machine.
-     *
-     * The vectors have to remain valid until all results have been read.
+     * \brief Finds doublets.
      */
-    void set_hits(const std::vector<compact_hit> &layer1,
-                  const std::vector<compact_hit> &layer2);
-
-    /// \brief Starts producing doublets.
-    void start();
+    void find(const std::vector<compact_hit> &layer1,
+              const std::vector<compact_hit> &layer2);
 
 private:
     compact_beam_spot _bs;
-    const std::vector<compact_hit> *_layer1;
-    const std::vector<compact_hit> *_layer2;
     std::vector<doublet> _doublets;
 };
 
