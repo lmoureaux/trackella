@@ -118,4 +118,56 @@ private:
     std::vector<doublet_type> _doublets;
 };
 
+class float_doublet_finder
+{
+public:
+    /// \brief A doublet, represented as indices within the two layers
+    using doublet_type = std::pair<std::uint16_t, std::uint16_t>;
+
+    /// \brief The type to use for hits
+    using hit_type = hit;
+
+    /// \brief The type to use for the beam spot
+    using beam_spot_type = beam_spot;
+
+    /// \brief Convert hits to the correct representation
+    std::vector<hit_type> convert(const std::vector<hit> &hits, int layer) const
+    {
+        return hits;
+    }
+
+    /// \brief Convert beam spot info to the correct representation
+    beam_spot_type convert(const beam_spot &bs) const
+    {
+        return bs;
+    }
+
+    /**
+     * \brief Gets back the produced doublets.
+     *
+     * Production will be resumed if the producer was out of memory.
+     *
+     * \return The number of doublets added to \c output.
+     */
+    std::size_t get_doublets(std::vector<doublet_type> &output);
+
+    /**
+     * \brief Pushes hits to the machine.
+     *
+     * You are responsible for passing back the vectors to \ref set_hits.
+     */
+    void sort_hits(std::vector<hit_type> &layer1,
+                   std::vector<hit_type> &layer2);
+
+    /**
+     * \brief Finds doublets.
+     */
+    void find(const beam_spot_type &bs,
+              const std::vector<hit_type> &layer1,
+              const std::vector<hit_type> &layer2);
+
+private:
+    std::vector<doublet_type> _doublets;
+};
+
 #endif // DOUBLET_FINDER_H
