@@ -6,6 +6,7 @@
 #include <TH1D.h>
 #include <TH2D.h>
 #include <TPie.h>
+#include <TTree.h>
 
 #include "doublet_finder.h"
 #include "eventreader.h"
@@ -93,6 +94,13 @@ int main(int, char **)
     bool do_validation = 0;
 
     TFile out("doublets.root", "RECREATE");
+    TTree tree("doublets", "doublets");
+
+    std::vector<int> doublets_inner;
+    tree.Branch("inner", &doublets_inner);
+
+    std::vector<int> doublets_outer;
+    tree.Branch("outer", &doublets_outer);
 
     TH1D doublet_phi1("doublet_phi1", ";phi1;count", 50, -pi, pi);
     TH1D doublet_phi2("doublet_phi2", ";phi2;count", 50, -pi, pi);
@@ -274,8 +282,14 @@ int main(int, char **)
                       << " duplicates!" << std::endl;
         }       
 
+        doublets_inner.clear();
+        doublets_outer.clear();
+
        int ndoub = 0;
         for (const auto &doublet : doublets) {
+            doublets_inner.push_back(doublet.first);
+            doublets_outer.push_back(doublet.second);
+
             const auto &h1 = layer1.at(doublet.first);
             const auto &h2 = layer2.at(doublet.second);
 
@@ -332,6 +346,8 @@ int main(int, char **)
 	       }	   
 	    }	   
 	}
+
+        tree.Fill();
        
        if( do_validation ) {
 	  
