@@ -102,6 +102,11 @@ int main(int, char **)
     std::vector<int> doublets_outer;
     tree.Branch("outer", &doublets_outer);
 
+    double formatting_seconds, sorting_seconds, finding_seconds;
+    tree.Branch("formatting_seconds", &formatting_seconds);
+    tree.Branch("sorting_seconds", &sorting_seconds);
+    tree.Branch("finding_seconds", &finding_seconds);
+
     TH1D doublet_phi1("doublet_phi1", ";phi1;count", 50, -pi, pi);
     TH1D doublet_phi2("doublet_phi2", ";phi2;count", 50, -pi, pi);
     TH1D doublet_phi2_phi1("doublet_phi2_phi1", ";phi2 - phi1;count", 50, -0.05, 0.05);
@@ -284,6 +289,10 @@ int main(int, char **)
 
         doublets_inner.clear();
         doublets_outer.clear();
+
+        formatting_seconds = formatting.count();
+        sorting_seconds = sorting.count();
+        finding_seconds = finding.count();
 
        int ndoub = 0;
         for (const auto &doublet : doublets) {
