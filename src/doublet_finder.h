@@ -32,16 +32,16 @@ public:
      *
      * The vectors have to remain valid until all results have been read.
      */
-    void set_hits(const std::vector<compact_pb_hit> &layer1,
-                  const std::vector<compact_pb_hit> &layer2);
+    void set_hits(const std::vector<compact_hit> &layer1,
+                  const std::vector<compact_hit> &layer2);
 
     /// \brief Starts producing doublets.
     void start();
 
 private:
     compact_beam_spot _bs;
-    const std::vector<compact_pb_hit> *_layer1;
-    const std::vector<compact_pb_hit> *_layer2;
+    const std::vector<compact_hit> *_layer1;
+    const std::vector<compact_hit> *_layer2;
     std::vector<doublet> _doublets;
 };
 

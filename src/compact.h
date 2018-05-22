@@ -53,7 +53,7 @@ struct compact_beam_spot
  *
  * It is assumed that the pixel layer is known from elsewhere.
  */
-struct compact_pb_hit
+struct compact_hit
 {
     /**
      * \brief Difference in \c r with respect to the layer's average.
@@ -82,6 +82,6 @@ struct compact_pb_hit
      */
     std::int32_t z;
 };
-static_assert(sizeof(compact_pb_hit) == 8);
+static_assert(sizeof(compact_hit) == 8);
 
 #endif // COMPACT_H

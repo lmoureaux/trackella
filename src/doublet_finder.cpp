@@ -26,8 +26,8 @@ std::size_t cpu_doublet_finder::get_doublets(
     }
 }
 
-void cpu_doublet_finder::set_hits(const std::vector<compact_pb_hit> &layer1,
-                                 const std::vector<compact_pb_hit> &layer2)
+void cpu_doublet_finder::set_hits(const std::vector<compact_hit> &layer1,
+                                 const std::vector<compact_hit> &layer2)
 {
     assert(get_state() & state_ready);
 
@@ -48,8 +48,8 @@ namespace /* anonymous */
      *
      * The error on the computed value is about 1.4mm.
      */
-    bool check_dz(const compact_pb_hit &inner,
-                  const compact_pb_hit &outer,
+    bool check_dz(const compact_hit &inner,
+                  const compact_hit &outer,
                   int rb_proj,
                   int b_dz)
     {

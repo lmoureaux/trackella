@@ -25,8 +25,8 @@ float deltaphi(float phi1, float phi2)
 }
 
 double extrapolated_xi(const compact_beam_spot &bs,
-                       const compact_pb_hit &inner,
-                       const compact_pb_hit &outer)
+                       const compact_hit &inner,
+                       const compact_hit &outer)
 {
     const constexpr int layer_1_r = length_to_compact<int>(3);
     const constexpr int layer_2_r = length_to_compact<int>(6.8);
@@ -49,8 +49,8 @@ double extrapolated_xi(const compact_beam_spot &bs,
  * \brief Finds transverse component of the impact parameter (wrt the beam spot)
  */
 int extrapolated_dr(const compact_beam_spot &bs,
-                    const compact_pb_hit &inner,
-                    const compact_pb_hit &outer)
+                    const compact_hit &inner,
+                    const compact_hit &outer)
 {
     const constexpr int layer_1_r = length_to_compact<int>(3);
     const constexpr int layer_2_r = length_to_compact<int>(6.8);
@@ -74,8 +74,8 @@ int extrapolated_dr(const compact_beam_spot &bs,
  * The error on the computed value is about 1.4mm.
  */
 int extrapolated_dz(const compact_beam_spot &bs,
-                    const compact_pb_hit &inner,
-                    const compact_pb_hit &outer)
+                    const compact_hit &inner,
+                    const compact_hit &outer)
 {
     double xi = extrapolated_xi(bs, inner, outer);
     return inner.z + (outer.z - inner.z) * xi - bs.z;
@@ -204,7 +204,7 @@ int main(int, char **)
 
         auto start = std::chrono::high_resolution_clock::now();
 
-        std::vector<compact_pb_hit> layer1;
+        std::vector<compact_hit> layer1;
         layer1.reserve(pb_hits_per_layer[0].size());
         for (const hit &h : pb_hits_per_layer[0]) {
             assert(std::abs(h.r - geom::real::pixel_barrel_radius[0]) < 2);
@@ -216,7 +216,7 @@ int main(int, char **)
             });
         }
 
-        std::vector<compact_pb_hit> layer2;
+        std::vector<compact_hit> layer2;
         layer2.reserve(pb_hits_per_layer[1].size());
         for (const hit &h : pb_hits_per_layer[1]) {
             assert(std::abs(h.r - geom::real::pixel_barrel_radius[1]) < 2);
@@ -236,12 +236,12 @@ int main(int, char **)
 
         std::sort(layer1.begin(),
                   layer1.end(),
-                  [](const compact_pb_hit &a, const compact_pb_hit &b) {
+                  [](const compact_hit &a, const compact_hit &b) {
                       return a.phi < b.phi;
                   });
         std::sort(layer2.begin(),
                   layer2.end(),
-                  [](const compact_pb_hit &a, const compact_pb_hit &b) {
+                  [](const compact_hit &a, const compact_hit &b) {
                       return a.phi < b.phi;
                   });
 
