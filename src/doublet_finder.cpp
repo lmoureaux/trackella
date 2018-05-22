@@ -151,9 +151,8 @@ void pb_doublet_finder::start()
         }
 
         // Need a float to compute the cos
-        float inner_phi = compact_to_radians(inner.phi);
-        // FIXME Update
-        int rb_proj = length_to_compact<int>(_bs.r * std::cos(_bs.phi - inner_phi));
+        float cos = std::cos(compact_to_radians(_bs.phi - inner.phi));
+        int rb_proj = _bs.r * cos;
         int b_dz = (inner.z - _bs.z) >> 8;
 
         for (auto it2 = _layer2->rbegin(); it2 != _layer2->rend(); ++it2) {
@@ -180,9 +179,8 @@ void pb_doublet_finder::start()
         }
 
         // Need a float to compute the cos
-        float inner_phi = compact_to_radians(inner.phi);
-        // FIXME Update
-        int rb_proj = length_to_compact<int>(_bs.r * std::cos(_bs.phi - inner_phi));
+        float cos = std::cos(compact_to_radians(_bs.phi - inner.phi));
+        int rb_proj = _bs.r * cos;
         int b_dz = (inner.z - _bs.z) >> 8;
 
         for (auto it2 = _layer2->begin(); it2 != _layer2->end(); ++it2) {
