@@ -11,12 +11,6 @@ std::size_t pb_doublet_finder::get_doublets(
 {
     assert(get_state() & state_out_of_memory || get_state() & state_finished);
 
-#ifdef HARDWARE_ACCELERATOR
-    // TODO
-    send_command(command::done_reading);
-    return 0;
-#else // HARDWARE_ACCELERATOR
-    _state |= state_ready;
     _layer1 = nullptr;
     _layer2 = nullptr;
 
@@ -30,50 +24,22 @@ std::size_t pb_doublet_finder::get_doublets(
         _doublets.clear();
         return count;
     }
-#endif // HARDWARE_ACCELERATOR
-}
-
-pb_doublet_finder::state pb_doublet_finder::get_state() const
-{
-#ifdef HARDWARE_ACCELERATOR
-    // TODO
-#else // HARDWARE_ACCELERATOR
-    return _state;
-#endif // HARDWARE_ACCELERATOR
 }
 
 void pb_doublet_finder::set_hits(const std::vector<compact_pb_hit> &layer1,
                                  const std::vector<compact_pb_hit> &layer2)
 {
     assert(get_state() & state_ready);
-    assert(layer1.size() <= max_hit_count);
-    assert(layer2.size() <= max_hit_count);
 
-#ifdef HARDWARE_ACCELERATOR
-    // TODO
-#else // HARDWARE_ACCELERATOR
     _layer1 = &layer1;
     _layer2 = &layer2;
-#endif // HARDWARE_ACCELERATOR
 }
 
 void pb_doublet_finder::set_beam_spot(const compact_beam_spot &bs)
 {
-    assert(get_state() == state_ready);
-
-#ifdef HARDWARE_ACCELERATOR
-    // TODO
-#else // HARDWARE_ACCELERATOR
     _bs = bs;
-#endif // HARDWARE_ACCELERATOR
 }
 
-void pb_doublet_finder::start()
-{
-    send_command(command::start);
-}
-
-#ifndef HARDWARE_ACCELERATOR
 namespace /* anonymous */
 {
     /**
@@ -109,30 +75,13 @@ namespace /* anonymous */
         return std::abs(dz_times_dr) < bound;
     }
 } // namespace anonymous
-#endif // HARDWARE_ACCELERATOR
 
-void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
+void pb_doublet_finder::start()
 {
-    if (cmd == command::start) {
-        assert(get_state() & state_ready);
-    } else if (cmd == command::done_reading) {
-        assert(get_state() & state_out_of_memory || get_state() & state_finished);
-    }
-
-#ifdef HARDWARE_ACCELERATOR
-    // TODO
-#else // HARDWARE_ACCELERATOR
-    if (cmd == command::start) {
-        if (_layer1->empty()) {
-            _state ^= state_ready;
-            _state ^= state_out_of_memory;
-            _state |= state_finished;
+   if (true) { // TODO Remove
+        if (_layer1->empty() || _layer2->empty()) {
             return;
         }
-
-        _state ^= state_ready;
-        _state ^= state_out_of_memory;
-        _state |= state_processing;
 
         std::size_t index = 0;
 
@@ -250,9 +199,5 @@ void pb_doublet_finder::send_command(pb_doublet_finder::command cmd)
         }
 
         _doublets.resize(index);
-
-        _state ^= state_processing;
-        _state |= state_finished;
     }
-#endif // HARDWARE_ACCELERATOR
 }
