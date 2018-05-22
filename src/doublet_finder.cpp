@@ -9,8 +9,6 @@
 std::size_t cpu_doublet_finder::get_doublets(
     std::vector<cpu_doublet_finder::doublet> &output)
 {
-    assert(get_state() & state_out_of_memory || get_state() & state_finished);
-
     _layer1 = nullptr;
     _layer2 = nullptr;
 
@@ -44,8 +42,6 @@ void cpu_doublet_finder::sort_hits(std::vector<compact_hit> &layer1,
 void cpu_doublet_finder::set_hits(const std::vector<compact_hit> &layer1,
                                  const std::vector<compact_hit> &layer2)
 {
-    assert(get_state() & state_ready);
-
     _layer1 = &layer1;
     _layer2 = &layer2;
 }
