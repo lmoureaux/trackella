@@ -18,7 +18,7 @@ std::vector<cpu_doublet_finder::hit_type> cpu_doublet_finder::convert(
 }
 
 std::size_t cpu_doublet_finder::get_doublets(
-    std::vector<cpu_doublet_finder::doublet> &output)
+    std::vector<cpu_doublet_finder::doublet_type> &output)
 {
     if (output.size() == 0) {
         std::swap(_doublets, output);

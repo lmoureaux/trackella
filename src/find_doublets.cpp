@@ -202,40 +202,23 @@ int main(int, char **)
 
         std::cout << "Making doublets..." << std::endl;
 
-        cpu_doublet_finder finder;
+        doublet_finder_wrapper<cpu_doublet_finder> wrap;
+        auto r = wrap.find(e->bs, pb_hits_per_layer);
 
-        auto start = std::chrono::high_resolution_clock::now();
+        formatting_acc += r.formatting;
+        formatted_hits += wrap.layer1.size();
+        formatted_hits += wrap.layer2.size();
 
-        auto bs = finder.convert(e->bs);
-        auto layer1 = finder.convert(pb_hits_per_layer[0], 0);
-        auto layer2 = finder.convert(pb_hits_per_layer[1], 1);
+        sorting_acc += r.sorting;
+        sorted_hits += wrap.layer1.size();
+        sorted_hits += wrap.layer2.size();
 
-        formatting = std::chrono::high_resolution_clock::now() - start;
-        formatting_acc += formatting;
-        formatted_hits += layer1.size();
-        formatted_hits += layer2.size();
-        auto sorting_start = std::chrono::high_resolution_clock::now();
+        auto doublets = r.doublets;
 
-        finder.sort_hits(layer1, layer2);
+        finding_acc += r.finding;
 
-        sorting = std::chrono::high_resolution_clock::now() - sorting_start;
-        sorting_acc += sorting;
-        sorted_hits += layer1.size();
-        sorted_hits += layer2.size();
-        auto finding_start = std::chrono::high_resolution_clock::now();
-
-        finder.find(bs, layer1, layer2);
-
-        std::vector<cpu_doublet_finder::doublet> doublets;
-        finder.get_doublets(doublets);
-
-        auto end = std::chrono::high_resolution_clock::now();
-        finding = end - finding_start;
-        finding_acc += finding;
-
-        std::chrono::duration<double> event_duration = end - start;
-        duration_vs_nvtx.Fill(e->nvtx, 1e6 * event_duration.count());
-        duration.Fill(1e6 * event_duration.count());
+        duration_vs_nvtx.Fill(e->nvtx, 1e6 * r.total.count());
+        duration.Fill(1e6 * r.total.count());
 
         doublets_found += doublets.size();
 
@@ -246,7 +229,7 @@ int main(int, char **)
         std::cout << "Doublets: "
                   << doublets.size()
                   << "; factor: "
-                  << layer1.size() * layer2.size() / doublets.size() << std::endl;
+                  << wrap.layer1.size() * wrap.layer2.size() / doublets.size() << std::endl;
 
         auto previous_size = doublets.size();
         std::sort(doublets.begin(), doublets.end());
@@ -260,18 +243,18 @@ int main(int, char **)
         doublets_inner.clear();
         doublets_outer.clear();
 
-        formatting_seconds = formatting.count();
-        sorting_seconds = sorting.count();
-        finding_seconds = finding.count();
-        total_seconds = event_duration.count();
+        formatting_seconds = r.formatting.count();
+        sorting_seconds = r.sorting.count();
+        finding_seconds = r.finding.count();
+        total_seconds = r.total.count();
 
        int ndoub = 0;
         for (const auto &doublet : doublets) {
             doublets_inner.push_back(doublet.first);
             doublets_outer.push_back(doublet.second);
 
-            const auto &h1 = layer1.at(doublet.first);
-            const auto &h2 = layer2.at(doublet.second);
+            const auto &h1 = wrap.layer1.at(doublet.first);
+            const auto &h2 = wrap.layer2.at(doublet.second);
 
             doublet_phi1.Fill(compact_to_radians(h1.phi));
             doublet_phi2.Fill(compact_to_radians(h2.phi));
@@ -279,8 +262,8 @@ int main(int, char **)
             doublet_z1.Fill(compact_to_length(h1.z));
             doublet_z2.Fill(compact_to_length(h2.z));
 
-            doublet_z0.Fill(compact_to_length(extrapolated_dz(bs, h1, h2)));
-            doublet_b0.Fill(compact_to_length(extrapolated_dr(bs, h1, h2)));
+//             doublet_z0.Fill(compact_to_length(extrapolated_dz(bs, h1, h2)));
+//             doublet_b0.Fill(compact_to_length(extrapolated_dr(bs, h1, h2)));
 	    
 	    if( do_validation ) {
 		
@@ -344,9 +327,9 @@ int main(int, char **)
 	  }
         }
 
-        hit_count_1.Fill(layer1.size());
-        hit_count_2.Fill(layer2.size());
-        hit_count_12.Fill(layer1.size() * layer2.size());
+        hit_count_1.Fill(wrap.layer1.size());
+        hit_count_2.Fill(wrap.layer2.size());
+        hit_count_12.Fill(wrap.layer1.size() * wrap.layer2.size());
         doublet_count.Fill(doublets.size());
     }
 
