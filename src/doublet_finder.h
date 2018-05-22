@@ -22,6 +22,16 @@ public:
     /// \brief Convert hits to the correct representation
     std::vector<hit_type> convert(const std::vector<hit> &hits, int layer) const;
 
+    /// \brief Convert beam spot info to the correct representation
+    beam_spot_type convert(const beam_spot &bs) const
+    {
+        return {
+            length_to_compact<std::int32_t>(bs.r),
+            length_to_compact<std::int32_t>(bs.z),
+            radians_to_compact(bs.phi)
+        };
+    }
+
     /**
      * \brief Gets back the produced doublets.
      *

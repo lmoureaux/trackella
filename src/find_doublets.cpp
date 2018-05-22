@@ -206,6 +206,7 @@ int main(int, char **)
 
         auto start = std::chrono::high_resolution_clock::now();
 
+        auto bs = finder.convert(e->bs);
         auto layer1 = finder.convert(pb_hits_per_layer[0], 0);
         auto layer2 = finder.convert(pb_hits_per_layer[1], 1);
 
@@ -222,12 +223,6 @@ int main(int, char **)
         sorted_hits += layer1.size();
         sorted_hits += layer2.size();
         auto finding_start = std::chrono::high_resolution_clock::now();
-
-        compact_beam_spot bs{
-            length_to_compact<std::int32_t>(e->bs.r),
-            length_to_compact<std::int32_t>(e->bs.z),
-            radians_to_compact(e->bs.phi)
-        };
 
         finder.find(bs, layer1, layer2);
 
