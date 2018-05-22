@@ -78,126 +78,124 @@ namespace /* anonymous */
 
 void pb_doublet_finder::start()
 {
-   if (true) { // TODO Remove
-        if (_layer1->empty() || _layer2->empty()) {
-            return;
-        }
-
-        std::size_t index = 0;
-
-        _doublets.resize(_layer1->size() * _layer2->size() / 64);
-
-        const std::int16_t window_width = radians_to_compact(0.04);
-
-        fast_sincos sincos(_bs.phi - _layer1->front().phi);
-        std::size_t iterations = 0;
-
-        auto range_begin = _layer2->begin();
-        auto range_end = range_begin;
-
-        for (auto it1 = _layer1->begin(); it1 != _layer1->end(); ++it1) {
-            const auto &inner = *it1;
-
-            sincos.step(_bs.phi - inner.phi);
-            if (iterations % 64 == 0) {
-                sincos.sync(_bs.phi - inner.phi);
-            }
-            iterations++;
-
-            int rb_proj = sincos.cos_times(_bs.r);
-            int b_dz = (inner.z - _bs.z) >> 8;
-
-            // We can't use an int16 here, else it wraps around in the first
-            // iteration, gets negative and the condition in the while loop is
-            // always false
-            const int phi_low = inner.phi - window_width;
-            while (range_begin->phi < phi_low && range_begin != _layer2->end()) {
-                ++range_begin;
-            }
-
-            // We can't use an int16 here, else it wraps around and the break
-            // below happens too early.
-            const int phi_high = inner.phi + window_width;
-            while (range_end->phi <= phi_high && range_end != _layer2->end()) {
-                 ++range_end;
-            }
-
-            for (auto it2 = range_begin; it2 != range_end; ++it2) {
-                if (check_dz(inner, *it2, rb_proj, b_dz)) {
-                    _doublets[index].first = std::distance(_layer1->begin(), it1);
-                    _doublets[index].second = std::distance(_layer2->begin(), it2);
-                    ++index;
-                }
-            }
-        }
-
-        /* Edge cases
-         * ----------
-         *
-         * When the first hit is close to -pi or pi, the search window in the
-         * second layer extends to both the beginning and the end of the list.
-         * The loop above only takes care of the case where both signs are
-         * equal, so we compensate below.
-         */
-
-        // Recover efficiency near -pi
-        for (auto it1 = _layer1->begin(); it1 != _layer1->end(); ++it1) {
-            const auto &inner = *it1;
-
-            // Here we want to check for the wraparound, so we need int16
-            const std::int16_t phi_low = inner.phi - window_width;
-            if (phi_low < 0) {
-                // Wrapped around
-                break;
-            }
-
-            // Need a float to compute the cos
-            float inner_phi = compact_to_radians(inner.phi);
-            // FIXME Update
-            int rb_proj = length_to_compact<int>(_bs.r * std::cos(_bs.phi - inner_phi));
-            int b_dz = (inner.z - _bs.z) >> 8;
-
-            for (auto it2 = _layer2->rbegin(); it2 != _layer2->rend(); ++it2) {
-                if (it2->phi < phi_low) {
-                    break;
-                }
-                if (check_dz(inner, *it2, rb_proj, b_dz)) {
-                    _doublets[index].first = std::distance(_layer1->begin(), it1);
-                    _doublets[index].second = std::distance(it2, _layer2->rend()) - 1;
-                    ++index;
-                }
-            }
-        }
-
-        // Recover efficiency near +pi
-        for (auto it1 = _layer1->rbegin(); it1 != _layer1->rend(); ++it1) {
-            const auto &inner = *it1;
-
-            // Here we want to check for the wraparound, so we need int16
-            const std::int16_t phi_high = inner.phi + window_width;
-            if (phi_high > 0) {
-                // Wrapped around
-                break;
-            }
-
-            // Need a float to compute the cos
-            float inner_phi = compact_to_radians(inner.phi);
-            // FIXME Update
-            int rb_proj = length_to_compact<int>(_bs.r * std::cos(_bs.phi - inner_phi));
-            int b_dz = (inner.z - _bs.z) >> 8;
-
-            for (auto it2 = _layer2->begin(); it2 != _layer2->end(); ++it2) {
-                if (it2->phi > phi_high) {
-                    break;
-                }
-                if (check_dz(inner, *it2, rb_proj, b_dz)) {
-                    _doublets[index].first = std::distance(it1, _layer1->rend()) - 1;
-                    _doublets[index].second = std::distance(_layer2->begin(), it2);
-                    ++index;
-                }
-            }
-        }
-
-        _doublets.resize(index);
+    if (_layer1->empty() || _layer2->empty()) {
+        return;
     }
+
+    std::size_t index = 0;
+
+    _doublets.resize(_layer1->size() * _layer2->size() / 64);
+
+    const std::int16_t window_width = radians_to_compact(0.04);
+
+    fast_sincos sincos(_bs.phi - _layer1->front().phi);
+    std::size_t iterations = 0;
+
+    auto range_begin = _layer2->begin();
+    auto range_end = range_begin;
+
+    for (auto it1 = _layer1->begin(); it1 != _layer1->end(); ++it1) {
+        const auto &inner = *it1;
+
+        sincos.step(_bs.phi - inner.phi);
+        if (iterations % 64 == 0) {
+            sincos.sync(_bs.phi - inner.phi);
+        }
+        iterations++;
+
+        int rb_proj = sincos.cos_times(_bs.r);
+        int b_dz = (inner.z - _bs.z) >> 8;
+
+        // We can't use an int16 here, else it wraps around in the first
+        // iteration, gets negative and the condition in the while loop is
+        // always false
+        const int phi_low = inner.phi - window_width;
+        while (range_begin->phi < phi_low && range_begin != _layer2->end()) {
+            ++range_begin;
+        }
+
+        // We can't use an int16 here, else it wraps around and the break
+        // below happens too early.
+        const int phi_high = inner.phi + window_width;
+        while (range_end->phi <= phi_high && range_end != _layer2->end()) {
+            ++range_end;
+        }
+
+        for (auto it2 = range_begin; it2 != range_end; ++it2) {
+            if (check_dz(inner, *it2, rb_proj, b_dz)) {
+                _doublets[index].first = std::distance(_layer1->begin(), it1);
+                _doublets[index].second = std::distance(_layer2->begin(), it2);
+                ++index;
+            }
+        }
+    }
+
+    /* Edge cases
+     * ----------
+     *
+     * When the first hit is close to -pi or pi, the search window in the
+     * second layer extends to both the beginning and the end of the list.
+     * The loop above only takes care of the case where both signs are
+     * equal, so we compensate below.
+     */
+
+    // Recover efficiency near -pi
+    for (auto it1 = _layer1->begin(); it1 != _layer1->end(); ++it1) {
+        const auto &inner = *it1;
+
+        // Here we want to check for the wraparound, so we need int16
+        const std::int16_t phi_low = inner.phi - window_width;
+        if (phi_low < 0) {
+            // Wrapped around
+            break;
+        }
+
+        // Need a float to compute the cos
+        float inner_phi = compact_to_radians(inner.phi);
+        // FIXME Update
+        int rb_proj = length_to_compact<int>(_bs.r * std::cos(_bs.phi - inner_phi));
+        int b_dz = (inner.z - _bs.z) >> 8;
+
+        for (auto it2 = _layer2->rbegin(); it2 != _layer2->rend(); ++it2) {
+            if (it2->phi < phi_low) {
+                break;
+            }
+            if (check_dz(inner, *it2, rb_proj, b_dz)) {
+                _doublets[index].first = std::distance(_layer1->begin(), it1);
+                _doublets[index].second = std::distance(it2, _layer2->rend()) - 1;
+                ++index;
+            }
+        }
+    }
+
+    // Recover efficiency near +pi
+    for (auto it1 = _layer1->rbegin(); it1 != _layer1->rend(); ++it1) {
+        const auto &inner = *it1;
+
+        // Here we want to check for the wraparound, so we need int16
+        const std::int16_t phi_high = inner.phi + window_width;
+        if (phi_high > 0) {
+            // Wrapped around
+            break;
+        }
+
+        // Need a float to compute the cos
+        float inner_phi = compact_to_radians(inner.phi);
+        // FIXME Update
+        int rb_proj = length_to_compact<int>(_bs.r * std::cos(_bs.phi - inner_phi));
+        int b_dz = (inner.z - _bs.z) >> 8;
+
+        for (auto it2 = _layer2->begin(); it2 != _layer2->end(); ++it2) {
+            if (it2->phi > phi_high) {
+                break;
+            }
+            if (check_dz(inner, *it2, rb_proj, b_dz)) {
+                _doublets[index].first = std::distance(it1, _layer1->rend()) - 1;
+                _doublets[index].second = std::distance(_layer2->begin(), it2);
+                ++index;
+            }
+        }
+    }
+
+    _doublets.resize(index);
 }
