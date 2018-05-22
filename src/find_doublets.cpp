@@ -248,7 +248,7 @@ int main(int, char **)
             radians_to_compact(e->bs.phi)
         };
 
-        pb_doublet_finder finder;
+        cpu_doublet_finder finder;
         finder.set_beam_spot(bs);
         finder.set_hits(layer1, layer2);
 
@@ -260,7 +260,7 @@ int main(int, char **)
 
         finder.start();
 
-        std::vector<pb_doublet_finder::doublet> doublets;
+        std::vector<cpu_doublet_finder::doublet> doublets;
         finder.get_doublets(doublets);
 
         auto end = std::chrono::high_resolution_clock::now();

@@ -6,8 +6,8 @@
 
 #include "fast_sincos.h"
 
-std::size_t pb_doublet_finder::get_doublets(
-    std::vector<pb_doublet_finder::doublet> &output)
+std::size_t cpu_doublet_finder::get_doublets(
+    std::vector<cpu_doublet_finder::doublet> &output)
 {
     assert(get_state() & state_out_of_memory || get_state() & state_finished);
 
@@ -26,7 +26,7 @@ std::size_t pb_doublet_finder::get_doublets(
     }
 }
 
-void pb_doublet_finder::set_hits(const std::vector<compact_pb_hit> &layer1,
+void cpu_doublet_finder::set_hits(const std::vector<compact_pb_hit> &layer1,
                                  const std::vector<compact_pb_hit> &layer2)
 {
     assert(get_state() & state_ready);
@@ -35,7 +35,7 @@ void pb_doublet_finder::set_hits(const std::vector<compact_pb_hit> &layer1,
     _layer2 = &layer2;
 }
 
-void pb_doublet_finder::set_beam_spot(const compact_beam_spot &bs)
+void cpu_doublet_finder::set_beam_spot(const compact_beam_spot &bs)
 {
     _bs = bs;
 }
@@ -76,7 +76,7 @@ namespace /* anonymous */
     }
 } // namespace anonymous
 
-void pb_doublet_finder::start()
+void cpu_doublet_finder::start()
 {
     if (_layer1->empty() || _layer2->empty()) {
         return;

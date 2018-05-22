@@ -7,7 +7,7 @@
 
 #include "hit.h"
 
-class pb_doublet_finder
+class cpu_doublet_finder
 {
 public:
     /// \brief A doublet, represented as indices within the two layers
