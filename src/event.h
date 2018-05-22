@@ -4,8 +4,6 @@
 #include <functional>
 #include <vector>
 
-#include "hit.h"
-
 struct hit
 {
     float r, phi, z;

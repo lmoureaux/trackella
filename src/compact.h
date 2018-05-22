@@ -1,5 +1,5 @@
-#ifndef HIT_H
-#define HIT_H
+#ifndef COMPACT_H
+#define COMPACT_H
 
 #include <cstdint>
 
@@ -84,4 +84,4 @@ struct compact_pb_hit
 };
 static_assert(sizeof(compact_pb_hit) == 8);
 
-#endif // HIT_H
+#endif // COMPACT_H

@@ -5,7 +5,7 @@
 #include <vector>
 #include <utility>
 
-#include "hit.h"
+#include "compact.h"
 
 class cpu_doublet_finder
 {

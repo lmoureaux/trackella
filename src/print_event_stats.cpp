@@ -5,6 +5,7 @@
 #include <TH1D.h>
 #include <TH2D.h>
 
+#include "compact.h"
 #include "eventreader.h"
 #include "hitutils.h"
 

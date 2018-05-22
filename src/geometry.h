@@ -3,7 +3,7 @@
 
 #include <array>
 
-#include "hit.h"
+#include "compact.h"
 
 namespace geom
 {

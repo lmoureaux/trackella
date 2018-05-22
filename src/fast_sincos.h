@@ -4,7 +4,7 @@
 #include <cmath>
 #include <cstdint>
 
-#include "hit.h"
+#include "compact.h"
 
 class fast_sincos
 {
