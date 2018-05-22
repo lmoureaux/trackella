@@ -23,11 +23,6 @@ public:
     std::size_t get_doublets(std::vector<doublet> &output);
 
     /**
-     * \brief Sets the beam spot properties.
-     */
-    void set_beam_spot(const compact_beam_spot &bs);
-
-    /**
      * \brief Pushes hits to the machine.
      *
      * You are responsible for passing back the vectors to \ref set_hits.
@@ -38,11 +33,11 @@ public:
     /**
      * \brief Finds doublets.
      */
-    void find(const std::vector<compact_hit> &layer1,
+    void find(const compact_beam_spot &bs,
+              const std::vector<compact_hit> &layer1,
               const std::vector<compact_hit> &layer2);
 
 private:
-    compact_beam_spot _bs;
     std::vector<doublet> _doublets;
 };
 

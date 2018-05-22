@@ -36,11 +36,6 @@ void cpu_doublet_finder::sort_hits(std::vector<compact_hit> &layer1,
               });
 }
 
-void cpu_doublet_finder::set_beam_spot(const compact_beam_spot &bs)
-{
-    _bs = bs;
-}
-
 namespace /* anonymous */
 {
     /**
@@ -77,7 +72,8 @@ namespace /* anonymous */
     }
 } // namespace anonymous
 
-void cpu_doublet_finder::find(const std::vector<compact_hit> &layer1,
+void cpu_doublet_finder::find(const compact_beam_spot &bs,
+                              const std::vector<compact_hit> &layer1,
                               const std::vector<compact_hit> &layer2)
 {
     if (layer1.empty() || layer2.empty()) {
@@ -90,7 +86,7 @@ void cpu_doublet_finder::find(const std::vector<compact_hit> &layer1,
 
     const std::int16_t window_width = radians_to_compact(0.04);
 
-    fast_sincos sincos(_bs.phi - layer1.front().phi);
+    fast_sincos sincos(bs.phi - layer1.front().phi);
     std::size_t iterations = 0;
 
     auto range_begin = layer2.begin();
@@ -99,14 +95,14 @@ void cpu_doublet_finder::find(const std::vector<compact_hit> &layer1,
     for (auto it1 = layer1.begin(); it1 != layer1.end(); ++it1) {
         const auto &inner = *it1;
 
-        sincos.step(_bs.phi - inner.phi);
+        sincos.step(bs.phi - inner.phi);
         if (iterations % 64 == 0) {
-            sincos.sync(_bs.phi - inner.phi);
+            sincos.sync(bs.phi - inner.phi);
         }
         iterations++;
 
-        int rb_proj = sincos.cos_times(_bs.r);
-        int b_dz = (inner.z - _bs.z) >> 8;
+        int rb_proj = sincos.cos_times(bs.r);
+        int b_dz = (inner.z - bs.z) >> 8;
 
         // We can't use an int16 here, else it wraps around in the first
         // iteration, gets negative and the condition in the while loop is
@@ -153,9 +149,9 @@ void cpu_doublet_finder::find(const std::vector<compact_hit> &layer1,
         }
 
         // Need a float to compute the cos
-        float cos = std::cos(compact_to_radians(_bs.phi - inner.phi));
-        int rb_proj = _bs.r * cos;
-        int b_dz = (inner.z - _bs.z) >> 8;
+        float cos = std::cos(compact_to_radians(bs.phi - inner.phi));
+        int rb_proj = bs.r * cos;
+        int b_dz = (inner.z - bs.z) >> 8;
 
         for (auto it2 = layer2.rbegin(); it2 != layer2.rend(); ++it2) {
             if (it2->phi < phi_low) {
@@ -181,9 +177,9 @@ void cpu_doublet_finder::find(const std::vector<compact_hit> &layer1,
         }
 
         // Need a float to compute the cos
-        float cos = std::cos(compact_to_radians(_bs.phi - inner.phi));
-        int rb_proj = _bs.r * cos;
-        int b_dz = (inner.z - _bs.z) >> 8;
+        float cos = std::cos(compact_to_radians(bs.phi - inner.phi));
+        int rb_proj = bs.r * cos;
+        int b_dz = (inner.z - bs.z) >> 8;
 
         for (auto it2 = layer2.begin(); it2 != layer2.end(); ++it2) {
             if (it2->phi > phi_high) {

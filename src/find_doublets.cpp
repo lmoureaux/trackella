@@ -226,21 +226,19 @@ int main(int, char **)
 
         finder.sort_hits(layer1, layer2);
 
-        compact_beam_spot bs{
-            length_to_compact<std::int32_t>(e->bs.r),
-            length_to_compact<std::int32_t>(e->bs.z),
-            radians_to_compact(e->bs.phi)
-        };
-
-        finder.set_beam_spot(bs);
-
         sorting = std::chrono::high_resolution_clock::now() - sorting_start;
         sorting_acc += sorting;
         formatted_hits += layer1.size();
         formatted_hits += layer2.size();
         auto finding_start = std::chrono::high_resolution_clock::now();
 
-        finder.find(layer1, layer2);
+        compact_beam_spot bs{
+            length_to_compact<std::int32_t>(e->bs.r),
+            length_to_compact<std::int32_t>(e->bs.z),
+            radians_to_compact(e->bs.phi)
+        };
+
+        finder.find(bs, layer1, layer2);
 
         std::vector<cpu_doublet_finder::doublet> doublets;
         finder.get_doublets(doublets);
