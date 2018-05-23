@@ -283,13 +283,22 @@ void float_doublet_finder::find(
 
     const float window_width = 0.04f;
 
+    fast_float_sincos sincos(bs.phi - layer1.front().phi);
+    std::size_t iterations = 0;
+
     auto range_begin = layer2.begin();
     auto range_end = range_begin;
 
     for (auto it1 = layer1.begin(); it1 != layer1.end(); ++it1) {
         const auto &inner = *it1;
 
-        float rb_proj = bs.r * std::cos(bs.phi - inner.phi);
+        sincos.step(bs.phi - inner.phi);
+        if (iterations % 64 == 0) {
+            sincos.sync(bs.phi - inner.phi);
+        }
+        iterations++;
+
+        float rb_proj = sincos.cos_times(bs.r);
         float b_dz = inner.z - bs.z;
 
         float phi_low = inner.phi - window_width;
