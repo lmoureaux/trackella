@@ -8,6 +8,7 @@
 #include <TPie.h>
 #include <TTree.h>
 
+#include "epiphany_doublet_finder.h"
 #include "doublet_finder.h"
 #include "eventreader.h"
 #include "geometry.h"
@@ -152,7 +153,9 @@ int main(int, char **)
    
 //     event_reader in("output.root");
 
+//     event_reader in("~lmoureau/data/v3-lp.root");
     event_reader in("~lmoureau/data/v3.root");
+//     event_reader in("~parallella/output2.root");
 
     long long i = 0;
     float n_doub_to_track = 0;
@@ -202,7 +205,7 @@ int main(int, char **)
 
         std::cout << "Making doublets..." << std::endl;
 
-        doublet_finder_wrapper<float_doublet_finder> wrap;
+        doublet_finder_wrapper<epiphany_doublet_finder> wrap;
         auto r = wrap.find(e->bs, pb_hits_per_layer);
 
         formatting_acc += r.formatting;
