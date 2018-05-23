@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(ESDK $ENV{EPIPHANY_HOME})
 set(ELIBS ${ESDK}/tools/host/lib)
 set(EINCS ${ESDK}/tools/host/include)
+set(ELDF ${ESDK}/bsps/current/internal.ldf)
 link_directories(find_doublets PRIVATE ${ELIBS})
 
 # Dependencies
@@ -36,4 +37,17 @@ target_link_libraries(find_doublets PUBLIC ${ROOT_LIBRARIES})
 target_include_directories(find_doublets SYSTEM PRIVATE ${EINCS})
 target_link_libraries(find_doublets PRIVATE e-hal e-loader)
 
-add_executable(asm-test src/asm-test.cpp)
+add_custom_target(doublet_finder_device
+    ALL
+    COMMAND e-g++ -O3 -T ${ELDF}
+        -I${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/src/doublet_finder_device.cpp
+        -o doublet_finder_device -le-lib -lm -ffast-math
+    DEPENDS
+    src/doublet_finder_device.cpp
+    SOURCES
+    src/doublet_finder_device.cpp
+)
+add_custom_command(
+    TARGET doublet_finder_device POST_BUILD
+    COMMAND e-strip -s doublet_finder_device)

@@ -20,12 +20,16 @@ epiphany_doublet_finder::epiphany_doublet_finder()
     e_init(NULL);
     e_reset_system();
 
+    e_alloc(&_eram, 0x0, sizeof(bool));
     e_open(&_device, 0, 0, e_platform.rows, e_platform.cols);
+
+    e_load_group("doublet_finder_device", &_device, 0, 0, 1, 1, E_TRUE);
 }
 
 epiphany_doublet_finder::~epiphany_doublet_finder()
 {
     e_close(&_device);
+    e_free(&_eram);
     e_finalize();
 }
 
@@ -105,4 +109,10 @@ void epiphany_doublet_finder::find(
         return;
     }
     upload(bs, layer1, layer2);
+
+    bool done = false;
+    e_write(&_eram, 0, 0, (off_t) 0x0, &done, sizeof(done));
+    do {
+        e_read(&_eram, 0, 0, (off_t) 0x0, &done, sizeof(done));
+    } while (!done);
 }
