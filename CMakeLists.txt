@@ -39,8 +39,10 @@ target_link_libraries(find_doublets PRIVATE e-hal e-loader)
 
 add_custom_target(doublet_finder_device
     ALL
-    COMMAND e-g++ -O3 -T ${ELDF}
+    COMMAND e-g++ -std=c++11 -g -T ${ELDF} -O3
+        -DON_DEVICE
         -I${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/src/fast_sincos.cpp
         ${CMAKE_SOURCE_DIR}/src/doublet_finder_device.cpp
         -o doublet_finder_device -le-lib -lm -ffast-math
     DEPENDS

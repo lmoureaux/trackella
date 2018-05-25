@@ -6,6 +6,14 @@
 
 #include "compact.h"
 
+#ifdef ON_DEVICE
+float custom_sin(float angle);
+float custom_cos(float angle);
+#else // ON_DEVICE
+#   define custom_cos std::cos
+#   define custom_sin std::sin
+#endif // ON_DEVICE
+
 class fast_sincos
 {
 public:
@@ -18,16 +26,16 @@ private:
 
 public:
     explicit fast_sincos(angle_type start) :
-        _sin(std::sin(compact_to_radians(start)) * (1 << 8)),
-        _cos(std::cos(compact_to_radians(start)) * (1 << 8)),
+        _sin(custom_sin(compact_to_radians(start)) * (1 << 8)),
+        _cos(custom_cos(compact_to_radians(start)) * (1 << 8)),
         _last(start)
     {}
 
     void sync()
     {
         float last = compact_to_radians(_last);
-        _sin = std::sin(last) * (1 << 8);
-        _cos = std::cos(last) * (1 << 8);
+        _sin = custom_sin(last) * (1 << 8);
+        _cos = custom_cos(last) * (1 << 8);
     }
 
     void sync(std::int16_t angle)

@@ -8,6 +8,7 @@
 #include <e-hal.h>
 #include <e-loader.h>
 
+#include "epiphany_protocol.h"
 #include "fast_sincos.h"
 
 extern "C" e_platform_t e_platform;
@@ -20,7 +21,7 @@ epiphany_doublet_finder::epiphany_doublet_finder()
     e_init(NULL);
     e_reset_system();
 
-    e_alloc(&_eram, 0x0, sizeof(bool));
+    e_alloc(&_eram, 0x0, 0x80000);
     e_open(&_device, 0, 0, e_platform.rows, e_platform.cols);
 
     e_load_group("doublet_finder_device", &_device, 0, 0, 1, 1, E_TRUE);
@@ -75,29 +76,39 @@ void epiphany_doublet_finder::sort_hits(
               });
 }
 
-namespace /* anonymous */
-{
-    struct metadata
-    {
-        std::int32_t layer1_size;
-        std::int32_t layer2_size;
-        epiphany_doublet_finder::beam_spot_type bs;
-    };
-} // anonymous namespace
-
 void epiphany_doublet_finder::upload(
         const epiphany_doublet_finder::beam_spot_type &bs,
         const std::vector<epiphany_doublet_finder::hit_type> &layer1,
         const std::vector<epiphany_doublet_finder::hit_type> &layer2)
 {
+    // Send the data to the device
     metadata m {
         std::int32_t(layer1.size()), std::int32_t(layer2.size()), bs
     };
-    e_write(&_device, 0, 0, (off_t) 0x3000 - sizeof(m), &m, sizeof(m));
-    std::size_t layer1_data_size = layer1.size() * sizeof(compact_hit);
-    e_write(&_device, 0, 0, (off_t) 0x3000, layer1.data(), layer1_data_size);
-    e_write(&_device, 0, 0, (off_t) 0x3000 + layer1_data_size,
+    std::cout << "metadata" << std::endl;
+    e_write(&_device, 0, 0, (off_t) device_addr::meta, &m, sizeof(m));
+
+    std::cout << "L1 "
+        << device_addr::data
+        << " .. "
+        << (device_addr::data + layer1.size())
+        << std::endl;
+    e_write(&_device, 0, 0, (off_t) device_addr::data,
+            layer1.data(), layer1.size() * sizeof(compact_hit));
+    std::cout << "L2 "
+        << (device_addr::data + layer1.size())
+        << " .. "
+        << (device_addr::data + layer1.size() + layer2.size() * sizeof(compact_hit))
+        << std::endl;
+    e_write(&_device, 0, 0,
+            (off_t) (device_addr::data + layer1.size()),
             layer2.data(), layer2.size() * sizeof(compact_hit));
+
+    // Notify the device so it can start
+    int data_is_there = 1;
+    std::cout << "starting" << std::endl;
+    e_write(&_device, 0, 0, (off_t) device_addr::status,
+            &data_is_there, sizeof(int));
 }
 
 void epiphany_doublet_finder::find(
@@ -108,11 +119,29 @@ void epiphany_doublet_finder::find(
     if (layer1.empty() || layer2.empty()) {
         return;
     }
+
+    // Reset the flags in shared memory
+    doublets_status s { doublets_status_code::invalid, 0 };
+    e_write(&_eram, 0, 0, (off_t) shm_addr::status, &s, sizeof(s));
+
+    // Start remote computing
     upload(bs, layer1, layer2);
 
-    bool done = false;
-    e_write(&_eram, 0, 0, (off_t) 0x0, &done, sizeof(done));
+    // Wait for the results to appear
+    std::cout << "waiting" << std::endl;
     do {
-        e_read(&_eram, 0, 0, (off_t) 0x0, &done, sizeof(done));
-    } while (!done);
+        e_read(&_eram, 0, 0, (off_t) shm_addr::status, &s, sizeof(s));
+//         std::cout << (int) s.code << " " << s.count << std::endl;
+    } while (s.code != doublets_status_code::ready);
+
+    // The results are there
+    _doublets.resize(s.count);
+    std::cout << "loading" << std::endl;
+    e_read(&_eram, 0, 0, (off_t) shm_addr::doublets,
+           _doublets.data(), s.count * sizeof(doublet));
+
+    std::cout << "---" << std::endl;
+//     for (auto &doublet : _doublets) {
+//         std::cout << doublet.first << " " << doublet.second << std::endl;
+//     }
 }

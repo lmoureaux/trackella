@@ -44,12 +44,15 @@ template<class T> constexpr T length_to_compact(float length)
 /**
  * \brief Holds compact information about the beam spot.
  */
+#pragma pack(push,4)
 struct compact_beam_spot
 {
     std::int32_t r;   ///< \brief Radius (cm)
     std::int32_t z;   ///< \brief Position along the \c z axis
     std::int16_t phi; ///< \brief Azimutal angle (compact representation)
 };
+static_assert(sizeof(compact_beam_spot) == 12, "compact_beam_spot size");
+#pragma pack(pop)
 
 /**
  * \brief Holds compact information about a pixel hit in the barrel.
@@ -94,6 +97,6 @@ struct compact_hit
         z(length_to_compact<int>(h.z))
     {}
 };
-static_assert(sizeof(compact_hit) == 8);
+static_assert(sizeof(compact_hit) == 8, "compact_hit size");
 
 #endif // COMPACT_H
